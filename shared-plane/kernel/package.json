@@ -1,0 +1,26 @@
+{
+  "name": "@medicitas/kernel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared persistence kernel: error model, configuration parsing, PostgreSQL transactions with tenant context and DB role.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}
