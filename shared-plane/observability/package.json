@@ -1,0 +1,22 @@
+{
+  "name": "@medicitas/observability",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Structured logging with redaction, correlation context and health checks.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "pino": "10.4.0"
+  }
+}
