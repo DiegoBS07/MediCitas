@@ -1,0 +1,24 @@
+{
+  "name": "@medicitas/identity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OIDC access-token validation against Keycloak JWKS, TenantContext and the permission matrix.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@medicitas/kernel": "*",
+    "jose": "6.2.13",
+    "zod": "4.6.7"
+  }
+}

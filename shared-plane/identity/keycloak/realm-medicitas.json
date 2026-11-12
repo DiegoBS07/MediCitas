@@ -1,0 +1,686 @@
+{
+  "realm": "medicitas",
+  "displayName": "MediCitas",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 30,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "platform_admin",
+        "description": "SaaS operator: onboards clinics; no access to clinical data."
+      },
+      {
+        "name": "clinic_admin",
+        "description": "Manages users, professionals and catalog; reads the audit log."
+      },
+      {
+        "name": "receptionist",
+        "description": "Registers patients and operates the agenda."
+      },
+      {
+        "name": "health_professional",
+        "description": "Consults own agenda and writes clinical notes."
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "tenants",
+      "attributes": {},
+      "subGroups": [
+        {
+          "name": "clinica-san-jose",
+          "attributes": {
+            "tenant_id": [
+              "10000000-0000-4000-8000-000000000001"
+            ]
+          }
+        },
+        {
+          "name": "centro-medico-heredia",
+          "attributes": {
+            "tenant_id": [
+              "10000000-0000-4000-8000-000000000002"
+            ]
+          }
+        },
+        {
+          "name": "clinica-del-istmo",
+          "attributes": {
+            "tenant_id": [
+              "10000000-0000-4000-8000-000000000003"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "medicitas-api",
+      "name": "MediCitas API (audience)",
+      "description": "Resource identifier: access tokens must carry aud=medicitas-api.",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "medicitas-cli",
+      "name": "MediCitas CLI (local evaluation only)",
+      "description": "Public client with direct access grants for scripts, the request collection and tests (decision-log P6).",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "basic",
+        "roles",
+        "profile",
+        "email",
+        "web-origins",
+        "acr"
+      ],
+      "optionalClientScopes": [],
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "medicitas-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "medicitas-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "medicitas-provisioner",
+      "name": "MediCitas provisioner (service account)",
+      "description": "Client credentials for onboarding-orchestrator and user-management-orchestrator (Admin REST API).",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${MEDICITAS_PROVISIONER_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "id": "30000000-0000-4000-8000-000000000000",
+      "username": "platform.admin@medicitas.test",
+      "email": "platform.admin@medicitas.test",
+      "firstName": "Platform",
+      "lastName": "Administrator",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": [
+        "platform_admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_PLATFORM_ADMIN_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010001",
+      "username": "ana.mora@sanjose.medicitas.test",
+      "email": "ana.mora@sanjose.medicitas.test",
+      "firstName": "Ana",
+      "lastName": "Mora",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "clinic_admin"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010002",
+      "username": "carlos.jimenez@sanjose.medicitas.test",
+      "email": "carlos.jimenez@sanjose.medicitas.test",
+      "firstName": "Carlos",
+      "lastName": "Jiménez",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010003",
+      "username": "laura.vargas@sanjose.medicitas.test",
+      "email": "laura.vargas@sanjose.medicitas.test",
+      "firstName": "Laura",
+      "lastName": "Vargas",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010011",
+      "username": "andres.rojas@sanjose.medicitas.test",
+      "email": "andres.rojas@sanjose.medicitas.test",
+      "firstName": "Andrés",
+      "lastName": "Rojas",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010012",
+      "username": "sofia.castro@sanjose.medicitas.test",
+      "email": "sofia.castro@sanjose.medicitas.test",
+      "firstName": "Sofía",
+      "lastName": "Castro",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000010013",
+      "username": "javier.mendez@sanjose.medicitas.test",
+      "email": "javier.mendez@sanjose.medicitas.test",
+      "firstName": "Javier",
+      "lastName": "Méndez",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-san-jose"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020001",
+      "username": "mariela.quesada@heredia.medicitas.test",
+      "email": "mariela.quesada@heredia.medicitas.test",
+      "firstName": "Mariela",
+      "lastName": "Quesada",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "clinic_admin"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020002",
+      "username": "diego.araya@heredia.medicitas.test",
+      "email": "diego.araya@heredia.medicitas.test",
+      "firstName": "Diego",
+      "lastName": "Araya",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020003",
+      "username": "paola.chaves@heredia.medicitas.test",
+      "email": "paola.chaves@heredia.medicitas.test",
+      "firstName": "Paola",
+      "lastName": "Chaves",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020011",
+      "username": "gabriela.herrera@heredia.medicitas.test",
+      "email": "gabriela.herrera@heredia.medicitas.test",
+      "firstName": "Gabriela",
+      "lastName": "Herrera",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020012",
+      "username": "esteban.ulate@heredia.medicitas.test",
+      "email": "esteban.ulate@heredia.medicitas.test",
+      "firstName": "Esteban",
+      "lastName": "Ulate",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000020013",
+      "username": "natalia.brenes@heredia.medicitas.test",
+      "email": "natalia.brenes@heredia.medicitas.test",
+      "firstName": "Natalia",
+      "lastName": "Brenes",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/centro-medico-heredia"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030001",
+      "username": "ricardo.pinzon@istmo.medicitas.test",
+      "email": "ricardo.pinzon@istmo.medicitas.test",
+      "firstName": "Ricardo",
+      "lastName": "Pinzón",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "clinic_admin"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030002",
+      "username": "yesenia.batista@istmo.medicitas.test",
+      "email": "yesenia.batista@istmo.medicitas.test",
+      "firstName": "Yesenia",
+      "lastName": "Batista",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030003",
+      "username": "luis.sanchez@istmo.medicitas.test",
+      "email": "luis.sanchez@istmo.medicitas.test",
+      "firstName": "Luis",
+      "lastName": "Sánchez",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "receptionist"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030011",
+      "username": "omar.delgado@istmo.medicitas.test",
+      "email": "omar.delgado@istmo.medicitas.test",
+      "firstName": "Omar",
+      "lastName": "Delgado",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030012",
+      "username": "itzel.camargo@istmo.medicitas.test",
+      "email": "itzel.camargo@istmo.medicitas.test",
+      "firstName": "Itzel",
+      "lastName": "Camargo",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000030013",
+      "username": "ruben.arosemena@istmo.medicitas.test",
+      "email": "ruben.arosemena@istmo.medicitas.test",
+      "firstName": "Rubén",
+      "lastName": "Arosemena",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "tenant_id": [
+          "10000000-0000-4000-8000-000000000003"
+        ]
+      },
+      "realmRoles": [
+        "health_professional"
+      ],
+      "groups": [
+        "/tenants/clinica-del-istmo"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MEDICITAS_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-medicitas-provisioner",
+      "enabled": true,
+      "serviceAccountClientId": "medicitas-provisioner",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users",
+          "query-groups",
+          "view-realm"
+        ]
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"Username\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"Email\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"First name\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"Last name\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"tenant_id\",\"displayName\":\"Clinic (tenant) identifier\",\"validations\":{\"pattern\":{\"pattern\":\"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$\",\"error-message\":\"invalid tenant id\"}},\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false},{\"name\":\"medicitas_saga_id\",\"displayName\":\"Provisioning saga identifier\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}],\"unmanagedAttributePolicy\":\"ADMIN_VIEW\"}"
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@medicitas/cache",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Redis client with fail-fast timeouts and explicit hit/miss/bypass semantics (cache only, never a source of truth).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@medicitas/kernel": "*",
+    "@medicitas/observability": "*",
+    "redis": "6.3.0",
+    "zod": "4.6.7"
+  }
+}
