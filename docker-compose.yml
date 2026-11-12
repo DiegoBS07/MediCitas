@@ -1,7 +1,8 @@
 # =============================================================================
 # MediCitas — Docker Compose
-# Stage 2 scope: PostgreSQL + one-shot database bootstrap + Flyway migrations/seeds.
-# RabbitMQ, Redis and Keycloak are added in Stage 3; the eight services in Stage 5.
+# Data plane: PostgreSQL + one-shot database bootstrap + Flyway migrations/seeds.
+# Shared plane: RabbitMQ (+ one-shot topology bootstrap), Redis (cache only), Keycloak.
+# The eight services are added in Stage 5. Host ports are bound to 127.0.0.1 only.
 #
 #   cp .env.example .env
 #   docker compose up --build
@@ -16,7 +17,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: postgres
     ports:
-      - "${POSTGRES_HOST_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
     networks:
@@ -88,9 +89,156 @@ services:
         condition: service_completed_successfully
     restart: "no"
 
+  # ---------------------------------------------------------------------------
+  # Shared plane
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:4.3.6-management
+    hostname: rabbitmq # stable Erlang node name, so the data volume is reused across restarts
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_ADMIN_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:${RABBITMQ_AMQP_HOST_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_HOST_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - medicitas
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+    mem_limit: 384m
+    restart: unless-stopped
+
+  rabbitmq-bootstrap:
+    build:
+      context: .
+      dockerfile: shared-plane/messaging/Dockerfile
+    image: medicitas/rabbitmq-bootstrap:local
+    environment:
+      RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
+      RABBITMQ_ADMIN_USER: ${RABBITMQ_ADMIN_USER}
+      RABBITMQ_ADMIN_PASSWORD: ${RABBITMQ_ADMIN_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_TM_PASSWORD: ${RABBITMQ_TM_PASSWORD}
+      RABBITMQ_ONB_PASSWORD: ${RABBITMQ_ONB_PASSWORD}
+      RABBITMQ_UM_PASSWORD: ${RABBITMQ_UM_PASSWORD}
+      RABBITMQ_UMO_PASSWORD: ${RABBITMQ_UMO_PASSWORD}
+      RABBITMQ_CAT_PASSWORD: ${RABBITMQ_CAT_PASSWORD}
+      RABBITMQ_SCH_PASSWORD: ${RABBITMQ_SCH_PASSWORD}
+      RABBITMQ_AO_PASSWORD: ${RABBITMQ_AO_PASSWORD}
+    networks:
+      - medicitas
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: "no"
+
+  redis:
+    image: redis:8.8.3-alpine
+    # Cache only (ADR-0008): no persistence, bounded memory, LRU eviction. ACL users (no default user):
+    #   scheduler   — availability keys only, cache commands only
+    #   healthcheck — PING only
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 96mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --user
+      - default
+      - "off"
+      - --user
+      - scheduler
+      - "on"
+      - ">${REDIS_SCHEDULER_PASSWORD}"
+      - "~availability:*"
+      - resetchannels
+      - "-@all"
+      - "+@connection"
+      - "+get"
+      - "+set"
+      - "+del"
+      - "+mget"
+      - "+sadd"
+      - "+smembers"
+      - "+expire"
+      - "+multi"
+      - "+exec"
+      - "+discard"
+      - --user
+      - healthcheck
+      - "on"
+      - ">${REDIS_HEALTHCHECK_PASSWORD}"
+      - resetchannels
+      - "-@all"
+      - "+ping"
+      - "+auth"
+      - "+hello"
+    environment:
+      REDIS_HEALTHCHECK_PASSWORD: ${REDIS_HEALTHCHECK_PASSWORD}
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    networks:
+      - medicitas
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --user healthcheck --pass \"$${REDIS_HEALTHCHECK_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 128m
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      # Tokens always carry the public issuer; services fetch keys through the internal name (ADR-0005).
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      # Heap capped at 50% of mem_limit so metaspace/native memory never push the JVM over the limit.
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=50 -XX:InitialRAMPercentage=25"
+      # Resolved by the realm import placeholders; never written into the repository.
+      MEDICITAS_PROVISIONER_CLIENT_SECRET: ${MEDICITAS_PROVISIONER_CLIENT_SECRET}
+      MEDICITAS_DEMO_USER_PASSWORD: ${MEDICITAS_DEMO_USER_PASSWORD}
+      MEDICITAS_PLATFORM_ADMIN_PASSWORD: ${MEDICITAS_PLATFORM_ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:${KEYCLOAK_HOST_PORT:-8080}:8080"
+    volumes:
+      # Named volume on the image's data directory (inherits the keycloak user's ownership);
+      # the versioned realm is bind-mounted read-only inside it.
+      - keycloak-data:/opt/keycloak/data
+      - ./shared-plane/identity/keycloak:/opt/keycloak/data/import:ro
+    networks:
+      - medicitas
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    mem_limit: 768m
+    restart: unless-stopped
+
 volumes:
   postgres-data:
     name: medicitas-postgres-data
+  rabbitmq-data:
+    name: medicitas-rabbitmq-data
+  keycloak-data:
+    name: medicitas-keycloak-data
 
 networks:
   medicitas:
