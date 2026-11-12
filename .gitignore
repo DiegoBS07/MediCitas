@@ -1,0 +1,41 @@
+# Dependencies (the rubric penalizes committing installed dependency folders)
+node_modules/
+.npm/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Local environment and secrets (only the example file is versioned)
+.env
+.env.*
+!.env.example
+
+# Test and coverage artifacts
+coverage/
+.vitest/
+tests/**/reports/
+*.lcov
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Excalidraw editor backups
+*.excalidraw.bak
+
+# docs
+docs/
+

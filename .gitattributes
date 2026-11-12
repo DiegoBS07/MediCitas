@@ -1,0 +1,18 @@
+# Normalize text files in the repository; force LF for everything executed or
+# read inside Linux containers (core.autocrlf=true on Windows would otherwise
+# check them out with CRLF and break shells, psql and Flyway checksums).
+* text=auto
+*.sh   text eol=lf
+*.sql  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.ts   text eol=lf
+*.js   text eol=lf
+*.md   text eol=lf
+.env.example text eol=lf
+Dockerfile text eol=lf
+
+*.png binary
+*.pdf binary
+*.excalidraw text eol=lf

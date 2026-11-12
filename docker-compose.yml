@@ -1,0 +1,97 @@
+# =============================================================================
+# MediCitas — Docker Compose
+# Stage 2 scope: PostgreSQL + one-shot database bootstrap + Flyway migrations/seeds.
+# RabbitMQ, Redis and Keycloak are added in Stage 3; the eight services in Stage 5.
+#
+#   cp .env.example .env
+#   docker compose up --build
+# =============================================================================
+name: medicitas
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - medicitas
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    mem_limit: 512m
+    restart: unless-stopped
+
+  db-bootstrap:
+    image: postgres:18
+    entrypoint: ["/bin/sh", "/bootstrap/bootstrap.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TM_DB_OWNER_PASSWORD: ${TM_DB_OWNER_PASSWORD}
+      TM_DB_APP_PASSWORD: ${TM_DB_APP_PASSWORD}
+      ONB_DB_OWNER_PASSWORD: ${ONB_DB_OWNER_PASSWORD}
+      ONB_DB_APP_PASSWORD: ${ONB_DB_APP_PASSWORD}
+      UM_DB_OWNER_PASSWORD: ${UM_DB_OWNER_PASSWORD}
+      UM_DB_APP_PASSWORD: ${UM_DB_APP_PASSWORD}
+      UMO_DB_OWNER_PASSWORD: ${UMO_DB_OWNER_PASSWORD}
+      UMO_DB_APP_PASSWORD: ${UMO_DB_APP_PASSWORD}
+      CAT_DB_OWNER_PASSWORD: ${CAT_DB_OWNER_PASSWORD}
+      CAT_DB_APP_PASSWORD: ${CAT_DB_APP_PASSWORD}
+      SCH_DB_OWNER_PASSWORD: ${SCH_DB_OWNER_PASSWORD}
+      SCH_DB_APP_PASSWORD: ${SCH_DB_APP_PASSWORD}
+      AO_DB_OWNER_PASSWORD: ${AO_DB_OWNER_PASSWORD}
+      AO_DB_APP_PASSWORD: ${AO_DB_APP_PASSWORD}
+      DB_EVIDENCE_PASSWORD: ${DB_EVIDENCE_PASSWORD}
+    volumes:
+      - ./database:/bootstrap:ro
+    networks:
+      - medicitas
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  flyway:
+    image: flyway/flyway:13.11.1
+    entrypoint: ["/bin/bash", "/flyway/runner/migrate-all.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      TM_DB_OWNER_PASSWORD: ${TM_DB_OWNER_PASSWORD}
+      ONB_DB_OWNER_PASSWORD: ${ONB_DB_OWNER_PASSWORD}
+      UM_DB_OWNER_PASSWORD: ${UM_DB_OWNER_PASSWORD}
+      UMO_DB_OWNER_PASSWORD: ${UMO_DB_OWNER_PASSWORD}
+      CAT_DB_OWNER_PASSWORD: ${CAT_DB_OWNER_PASSWORD}
+      SCH_DB_OWNER_PASSWORD: ${SCH_DB_OWNER_PASSWORD}
+      AO_DB_OWNER_PASSWORD: ${AO_DB_OWNER_PASSWORD}
+    volumes:
+      - ./database/flyway:/flyway/runner:ro
+      - ./database/migrations/common:/flyway/common:ro
+      - ./control-plane:/flyway/services/control-plane:ro
+      - ./application-plane:/flyway/services/application-plane:ro
+    networks:
+      - medicitas
+    depends_on:
+      db-bootstrap:
+        condition: service_completed_successfully
+    restart: "no"
+
+volumes:
+  postgres-data:
+    name: medicitas-postgres-data
+
+networks:
+  medicitas:
+    name: medicitas-network
