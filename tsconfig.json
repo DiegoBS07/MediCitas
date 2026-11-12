@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "shared-plane/kernel" },
+    { "path": "shared-plane/observability" },
+    { "path": "shared-plane/identity" },
+    { "path": "shared-plane/messaging" },
+    { "path": "shared-plane/cache" }
+  ]
+}

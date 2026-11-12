@@ -1,0 +1,31 @@
+{
+  "name": "medicitas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MediCitas — multi-tenant SaaS for medical appointments (backend and data platform).",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "shared-plane/kernel",
+    "shared-plane/observability",
+    "shared-plane/identity",
+    "shared-plane/messaging",
+    "shared-plane/cache"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.tests.json",
+    "clean": "tsc -b --clean",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "check:no-any": "node scripts/check-no-any.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "4.1.12"
+  }
+}
