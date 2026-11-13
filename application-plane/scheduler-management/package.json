@@ -1,0 +1,26 @@
+{
+  "name": "@medicitas/scheduler-management",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Application plane: appointment aggregate owner (RF5-RF13, RF15-RF21): schedules, blocks, availability with Redis cache, holds, clinical notes and the append-only audit log.",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@medicitas/cache": "*",
+    "@medicitas/identity": "*",
+    "@medicitas/kernel": "*",
+    "@medicitas/messaging": "*",
+    "@medicitas/observability": "*",
+    "@medicitas/runtime": "*",
+    "express": "5.3.0",
+    "redis": "6.3.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
+  }
+}
