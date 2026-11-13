@@ -40,6 +40,7 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.ts', 'tests/contract/**/*.test.ts', 'tests/concurrency/**/*.test.ts'],
           setupFiles: ['tests/support/load-env.ts'],
+          globalSetup: ['tests/support/global-setup.ts'],
           testTimeout: 60_000,
           hookTimeout: 60_000,
           fileParallelism: false,

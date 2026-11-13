@@ -48,7 +48,8 @@ describe('Keycloak realm (ADR-0005) and token validation (RF17)', () => {
         { tenantId, actorSubject: null, dbRole: 'um_system', isolation: 'READ COMMITTED' },
         async (client) =>
           (await client.query<{ email: string; keycloak_subject: string; tenant_id: string; role: string }>(
-            'SELECT email, keycloak_subject, tenant_id, role FROM users ORDER BY email',
+            // Seeded users only (V900 ids 20000000-…): users created by RF2 flows or acceptance runs are not part of the seed.
+            `SELECT email, keycloak_subject, tenant_id, role FROM users WHERE id::text LIKE '20000000-0000-4000-8000-%' ORDER BY email`,
           )).rows,
       );
       expect(users).toHaveLength(6);
