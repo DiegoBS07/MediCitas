@@ -2,12 +2,74 @@
 # MediCitas — Docker Compose
 # Data plane: PostgreSQL + one-shot database bootstrap + Flyway migrations/seeds.
 # Shared plane: RabbitMQ (+ one-shot topology bootstrap), Redis (cache only), Keycloak.
-# The eight services are added in Stage 5. Host ports are bound to 127.0.0.1 only.
+# Domain services: the eight TypeScript services; only the API gateway is published.
+# Host ports are bound to 127.0.0.1 only. Containers address each other by service name.
 #
 #   cp .env.example .env
-#   docker compose up --build
+#   docker compose up --build        (add -d --wait to return once everything is healthy)
 # =============================================================================
 name: medicitas
+
+# --- Reusable fragments for the domain services ---------------------------------
+x-app-healthcheck: &app-healthcheck
+  # node:24-slim has no curl/wget: the probe uses Node's fetch against the readiness endpoint.
+  test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+  interval: 10s
+  timeout: 3s
+  retries: 6
+  start_period: 30s
+
+x-app-container: &app-container
+  networks:
+    - medicitas
+  healthcheck: *app-healthcheck
+  read_only: true
+  tmpfs:
+    - /tmp:size=16m
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  stop_grace_period: 20s
+  mem_limit: 256m
+  restart: unless-stopped
+
+x-domain-service-deps: &domain-service-deps
+  flyway:
+    condition: service_completed_successfully
+  rabbitmq-bootstrap:
+    condition: service_completed_successfully
+  postgres:
+    condition: service_healthy
+  rabbitmq:
+    condition: service_healthy
+  keycloak:
+    condition: service_healthy
+
+x-domain-service: &domain-service
+  <<: *app-container
+  depends_on: *domain-service-deps
+
+# Variables common to the seven services with a database (shared-plane/runtime serviceEnvSchema).
+x-service-env: &service-env
+  SERVICE_PORT: "3000"
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+  # Keys through the internal name; issuer = the public URL clients obtain tokens from (ADR-0005).
+  KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/medicitas/protocol/openid-connect/certs
+  KEYCLOAK_PUBLIC_ISSUER: ${KEYCLOAK_PUBLIC_URL}/realms/medicitas
+  KEYCLOAK_AUDIENCE: medicitas-api
+
+# Keycloak Admin REST API (provisioner service account) for the RF1/RF2 orchestrators.
+x-keycloak-admin-env: &keycloak-admin-env
+  KEYCLOAK_ADMIN_URL: http://keycloak:8080
+  KEYCLOAK_REALM: medicitas
+  KEYCLOAK_PROVISIONER_CLIENT_ID: medicitas-provisioner
+  KEYCLOAK_PROVISIONER_CLIENT_SECRET: ${MEDICITAS_PROVISIONER_CLIENT_SECRET}
 
 services:
   postgres:
@@ -231,6 +293,157 @@ services:
       start_period: 30s
     mem_limit: 768m
     restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Domain services (Stage 5). One image per service (multi-stage, non-root, read-only root
+  # filesystem). Only the API gateway publishes a host port; every other service is reachable
+  # only inside the medicitas network, by service name. One replica each (RAM budget; the
+  # RF1/RF2 orchestrators also keep temporary passwords in memory, decision-log S4-10).
+  # ---------------------------------------------------------------------------
+  tenant-management:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: control-plane/tenant-management/Dockerfile
+    image: medicitas/tenant-management:local
+    environment:
+      <<: *service-env
+      DB_NAME: medicitas_tenant
+      DB_USER: tm_app
+      DB_PASSWORD: ${TM_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_TM_PASSWORD}
+
+  onboarding-orchestrator:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: control-plane/onboarding-orchestrator/Dockerfile
+    image: medicitas/onboarding-orchestrator:local
+    environment:
+      <<: [*service-env, *keycloak-admin-env]
+      DB_NAME: medicitas_onboarding
+      DB_USER: onb_app
+      DB_PASSWORD: ${ONB_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_ONB_PASSWORD}
+
+  user-management:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: application-plane/user-management/Dockerfile
+    image: medicitas/user-management:local
+    environment:
+      <<: *service-env
+      DB_NAME: medicitas_user
+      DB_USER: um_app
+      DB_PASSWORD: ${UM_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_UM_PASSWORD}
+
+  user-management-orchestrator:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: application-plane/user-management-orchestrator/Dockerfile
+    image: medicitas/user-management-orchestrator:local
+    environment:
+      <<: [*service-env, *keycloak-admin-env]
+      DB_NAME: medicitas_user_orchestrator
+      DB_USER: umo_app
+      DB_PASSWORD: ${UMO_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_UMO_PASSWORD}
+
+  catalog-service-management:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: application-plane/catalog-service-management/Dockerfile
+    image: medicitas/catalog-service-management:local
+    environment:
+      <<: *service-env
+      DB_NAME: medicitas_catalog
+      DB_USER: cat_app
+      DB_PASSWORD: ${CAT_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_CAT_PASSWORD}
+
+  scheduler-management:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: application-plane/scheduler-management/Dockerfile
+    image: medicitas/scheduler-management:local
+    environment:
+      <<: *service-env
+      DB_NAME: medicitas_scheduler
+      DB_USER: sch_app
+      DB_PASSWORD: ${SCH_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_SCH_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_USERNAME: scheduler
+      REDIS_PASSWORD: ${REDIS_SCHEDULER_PASSWORD}
+      AVAILABILITY_CACHE_ENABLED: ${AVAILABILITY_CACHE_ENABLED:-true}
+      AVAILABILITY_CACHE_TTL_SECONDS: ${AVAILABILITY_CACHE_TTL_SECONDS:-300}
+    depends_on:
+      <<: *domain-service-deps
+      redis:
+        condition: service_healthy
+
+  appointment-orchestrator:
+    <<: *domain-service
+    build:
+      context: .
+      dockerfile: application-plane/appointment-orchestrator/Dockerfile
+    image: medicitas/appointment-orchestrator:local
+    environment:
+      <<: *service-env
+      DB_NAME: medicitas_appointment_orchestrator
+      DB_USER: ao_app
+      DB_PASSWORD: ${AO_DB_APP_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_AO_PASSWORD}
+
+  api-gateway:
+    <<: *app-container
+    build:
+      context: .
+      dockerfile: application-plane/api-gateway/Dockerfile
+    image: medicitas/api-gateway:local
+    environment:
+      SERVICE_PORT: "8000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/medicitas/protocol/openid-connect/certs
+      KEYCLOAK_PUBLIC_ISSUER: ${KEYCLOAK_PUBLIC_URL}/realms/medicitas
+      KEYCLOAK_AUDIENCE: medicitas-api
+      UPSTREAM_TIMEOUT_MS: "20000"
+      TENANT_MANAGEMENT_URL: http://tenant-management:3000
+      ONBOARDING_ORCHESTRATOR_URL: http://onboarding-orchestrator:3000
+      USER_MANAGEMENT_URL: http://user-management:3000
+      USER_MANAGEMENT_ORCHESTRATOR_URL: http://user-management-orchestrator:3000
+      CATALOG_SERVICE_URL: http://catalog-service-management:3000
+      SCHEDULER_URL: http://scheduler-management:3000
+      APPOINTMENT_ORCHESTRATOR_URL: http://appointment-orchestrator:3000
+    ports:
+      - "127.0.0.1:${GATEWAY_HOST_PORT:-8000}:8000"
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/health/ready').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+    mem_limit: 192m
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      tenant-management:
+        condition: service_healthy
+      onboarding-orchestrator:
+        condition: service_healthy
+      user-management:
+        condition: service_healthy
+      user-management-orchestrator:
+        condition: service_healthy
+      catalog-service-management:
+        condition: service_healthy
+      scheduler-management:
+        condition: service_healthy
+      appointment-orchestrator:
+        condition: service_healthy
 
 volumes:
   postgres-data:

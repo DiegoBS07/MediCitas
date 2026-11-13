@@ -30,7 +30,10 @@
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "check:no-any": "node scripts/check-no-any.mjs"
+    "check:no-any": "node scripts/check-no-any.mjs",
+    "smoke": "node scripts/smoke-compose.mjs",
+    "stack:up": "docker compose up -d --build --wait",
+    "stack:services:stop": "docker compose stop api-gateway tenant-management onboarding-orchestrator user-management user-management-orchestrator catalog-service-management scheduler-management appointment-orchestrator"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
