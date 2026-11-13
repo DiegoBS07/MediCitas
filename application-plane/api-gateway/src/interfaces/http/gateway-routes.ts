@@ -33,7 +33,12 @@ export function gatewayRoutes(settings: GatewaySettings, logger: Logger) {
       const value = req.get(name);
       if (value !== undefined) headers[name] = value;
     }
-    const hasBody = req.body !== undefined && req.method !== 'GET' && req.method !== 'DELETE';
+    // Forward a body only when the client actually sent one: a body-less POST (e.g. deactivate) may
+    // arrive with "Content-Length: 0" and no Content-Type, and must reach the service body-less too.
+    const contentLength = req.get('Content-Length');
+    const clientSentBody = contentLength !== undefined ? Number(contentLength) > 0 : req.get('Transfer-Encoding') !== undefined;
+    const hasBody = clientSentBody && req.body !== undefined && req.method !== 'GET' && req.method !== 'DELETE';
+    if (!hasBody) delete headers['content-type'];
     let response: globalThis.Response;
     try {
       response = await fetch(`${settings.upstreams[upstream]}${req.originalUrl}`, {
