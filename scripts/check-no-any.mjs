@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Fails when TypeScript sources or tests use `any` as an escape hatch (prompt §4: "No usar `any`").
+ * Fails when TypeScript sources or tests use `any` as an escape hatch.
  * Complements `noImplicitAny`, which only catches implicit cases.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
