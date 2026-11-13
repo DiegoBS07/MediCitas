@@ -9,3 +9,7 @@
 docs
 tests
 **/*.log
+# Not needed to build any image (migrations/seeds are mounted into the flyway container).
+**/tests
+**/migrations
+**/seed
