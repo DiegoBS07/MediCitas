@@ -1,0 +1,23 @@
+{
+  "name": "@medicitas/api-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Edge: the only public entry point. Validates the JWT, enforces the route permission (401/403) and forwards to the owning service (REST, decision D1).",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@medicitas/identity": "*",
+    "@medicitas/kernel": "*",
+    "@medicitas/observability": "*",
+    "@medicitas/runtime": "*",
+    "express": "5.3.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
+  }
+}
