@@ -119,8 +119,9 @@ describe('RF2 user provisioning saga (user-management + Keycloak)', () => {
     expect(deactivated.status).toBe(200);
     expect(deactivated.body.data.status).toBe('inactive');
     expect((await keycloak.getUser(subject))?.enabled).toBe(false);
-    const again = await http('POST', `/api/v1/users/${userId}/deactivate`, { token: admin });
-    expect(again.status).toBe(200);
+    // api-contracts §3.3: an already inactive user → 409 INVALID_STATE_TRANSITION.
+    const again = await http<{ code: string }>('POST', `/api/v1/users/${userId}/deactivate`, { token: admin });
+    expect([again.status, again.body.code]).toEqual([409, 'INVALID_STATE_TRANSITION']);
   });
 
   it('rejects taken e-mails, platform_admin, self-deactivation and demoting the last clinic admin', async () => {

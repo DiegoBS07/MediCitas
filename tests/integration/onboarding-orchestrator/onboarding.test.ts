@@ -77,11 +77,13 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const service of [...services].reverse()) await service.stop();
-  for (const email of emails) {
+  // Only identities this suite created: some tests deliberately reuse seeded slugs/e-mails to provoke
+  // conflicts (e.g. TENANT_SLUG_TAKEN with clinica-san-jose), and those must never be deleted.
+  for (const email of emails.filter((candidate) => candidate.endsWith('@it.medicitas.test'))) {
     const user = await keycloak.findUserByUsername(email);
     if (user !== null) await keycloak.deleteUser(user.id);
   }
-  for (const slug of slugs) {
+  for (const slug of slugs.filter((candidate) => candidate.startsWith('it-'))) {
     const group = await keycloak.groupByPath(`/tenants/${slug}`);
     if (group !== null) await keycloak.deleteGroup(group.id);
   }
