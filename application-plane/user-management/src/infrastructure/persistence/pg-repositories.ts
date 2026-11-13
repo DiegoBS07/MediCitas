@@ -245,13 +245,13 @@ export class PgPatientRepository implements PatientRepository {
     let keyset = '';
     if (query.after !== null) {
       params.push(...query.after);
-      keyset = 'AND (lower(last_name), id) > ($4, $5::uuid)';
+      keyset = 'AND (search_last_name, id) > ($4, $5::uuid)';
     }
     const { rows } = await this.client.query<PatientRow>(
       `SELECT ${PATIENT_LIST_COLUMNS} FROM patients
-       WHERE ($1::text IS NULL OR lower(last_name) LIKE $1 OR lower(first_name) LIKE $1 OR identification_number LIKE $2)
+       WHERE ($1::text IS NULL OR search_last_name LIKE $1 OR search_first_name LIKE $1 OR identification_number LIKE $2)
          ${keyset}
-       ORDER BY lower(last_name), id
+       ORDER BY search_last_name, id
        LIMIT $3`,
       params,
     );
