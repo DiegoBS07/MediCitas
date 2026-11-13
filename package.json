@@ -12,7 +12,16 @@
     "shared-plane/observability",
     "shared-plane/identity",
     "shared-plane/messaging",
-    "shared-plane/cache"
+    "shared-plane/cache",
+    "shared-plane/runtime",
+    "control-plane/tenant-management",
+    "application-plane/user-management",
+    "application-plane/catalog-service-management",
+    "application-plane/scheduler-management",
+    "application-plane/appointment-orchestrator",
+    "application-plane/user-management-orchestrator",
+    "control-plane/onboarding-orchestrator",
+    "application-plane/api-gateway"
   ],
   "scripts": {
     "build": "tsc -b",

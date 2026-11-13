@@ -1,10 +1,47 @@
 {
   "files": [],
   "references": [
-    { "path": "shared-plane/kernel" },
-    { "path": "shared-plane/observability" },
-    { "path": "shared-plane/identity" },
-    { "path": "shared-plane/messaging" },
-    { "path": "shared-plane/cache" }
+    {
+      "path": "shared-plane/kernel"
+    },
+    {
+      "path": "shared-plane/observability"
+    },
+    {
+      "path": "shared-plane/identity"
+    },
+    {
+      "path": "shared-plane/messaging"
+    },
+    {
+      "path": "shared-plane/cache"
+    },
+    {
+      "path": "shared-plane/runtime"
+    },
+    {
+      "path": "control-plane/tenant-management"
+    },
+    {
+      "path": "application-plane/user-management"
+    },
+    {
+      "path": "application-plane/catalog-service-management"
+    },
+    {
+      "path": "application-plane/scheduler-management"
+    },
+    {
+      "path": "application-plane/appointment-orchestrator"
+    },
+    {
+      "path": "application-plane/user-management-orchestrator"
+    },
+    {
+      "path": "control-plane/onboarding-orchestrator"
+    },
+    {
+      "path": "application-plane/api-gateway"
+    }
   ]
 }

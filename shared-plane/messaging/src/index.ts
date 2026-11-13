@@ -8,3 +8,4 @@ export * from './inbox.js';
 export * from './outbox.js';
 export * from './query.js';
 export * from './broker-bootstrap.js';
+export * from './handlers.js';

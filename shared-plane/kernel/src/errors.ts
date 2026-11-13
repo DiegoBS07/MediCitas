@@ -21,6 +21,8 @@ export interface ErrorDetail {
 
 export interface AppErrorOptions {
   readonly details?: readonly ErrorDetail[];
+  /** Extra, non-sensitive fields exposed as problem `details` (e.g. { resource: "patient" }). */
+  readonly meta?: Readonly<Record<string, string>>;
   readonly retryable?: boolean;
   readonly cause?: unknown;
 }
@@ -29,6 +31,7 @@ export class AppError extends Error {
   readonly code: string;
   readonly category: ErrorCategory;
   readonly details: readonly ErrorDetail[];
+  readonly meta: Readonly<Record<string, string>>;
   readonly retryable: boolean;
 
   constructor(category: ErrorCategory, code: string, message: string, options: AppErrorOptions = {}) {
@@ -37,6 +40,7 @@ export class AppError extends Error {
     this.category = category;
     this.code = code;
     this.details = options.details ?? [];
+    this.meta = options.meta ?? {};
     this.retryable = options.retryable ?? category === 'dependency';
   }
 }
@@ -63,7 +67,7 @@ export class NotFoundError extends AppError {
   readonly resource: string;
 
   constructor(resource: string, message = `${resource} not found.`) {
-    super('not_found', 'RESOURCE_NOT_FOUND', message);
+    super('not_found', 'RESOURCE_NOT_FOUND', message, { meta: { resource } });
     this.resource = resource;
   }
 }

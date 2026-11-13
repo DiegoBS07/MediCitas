@@ -7,12 +7,31 @@
     "declarationMap": false,
     "sourceMap": false,
     "paths": {
-      "@medicitas/kernel": ["./shared-plane/kernel/src/index.ts"],
-      "@medicitas/observability": ["./shared-plane/observability/src/index.ts"],
-      "@medicitas/identity": ["./shared-plane/identity/src/index.ts"],
-      "@medicitas/messaging": ["./shared-plane/messaging/src/index.ts"],
-      "@medicitas/cache": ["./shared-plane/cache/src/index.ts"]
+      "@medicitas/kernel": [
+        "./shared-plane/kernel/src/index.ts"
+      ],
+      "@medicitas/observability": [
+        "./shared-plane/observability/src/index.ts"
+      ],
+      "@medicitas/identity": [
+        "./shared-plane/identity/src/index.ts"
+      ],
+      "@medicitas/messaging": [
+        "./shared-plane/messaging/src/index.ts"
+      ],
+      "@medicitas/cache": [
+        "./shared-plane/cache/src/index.ts"
+      ],
+      "@medicitas/runtime": [
+        "./shared-plane/runtime/src/index.ts"
+      ]
     }
   },
-  "include": ["tests/**/*.ts", "shared-plane/*/tests/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "tests/**/*.ts",
+    "shared-plane/*/tests/**/*.ts",
+    "application-plane/*/tests/**/*.ts",
+    "control-plane/*/tests/**/*.ts",
+    "vitest.config.ts"
+  ]
 }

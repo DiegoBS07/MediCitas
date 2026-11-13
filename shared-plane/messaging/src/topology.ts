@@ -178,7 +178,8 @@ export const SERVICES: readonly ServiceMessagingDefinition[] = [
     service: 'appointment-orchestrator',
     brokerUser: 'svc_appointment_orchestrator',
     passwordEnv: 'RABBITMQ_AO_PASSWORD',
-    publishesTo: [EXCHANGES.commands],
+    // Domain events: AppointmentBookingFailed (messaging-contracts §8).
+    publishesTo: [EXCHANGES.commands, EXCHANGES.events],
     consumes: [repliesQueue('appointment-orchestrator')],
     directReplyTo: 'none',
   },

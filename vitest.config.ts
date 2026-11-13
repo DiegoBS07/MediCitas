@@ -17,6 +17,7 @@ export default defineConfig({
       '@medicitas/identity': source('./shared-plane/identity/src/index.ts'),
       '@medicitas/messaging': source('./shared-plane/messaging/src/index.ts'),
       '@medicitas/cache': source('./shared-plane/cache/src/index.ts'),
+      '@medicitas/runtime': source('./shared-plane/runtime/src/index.ts'),
     },
   },
   test: {
