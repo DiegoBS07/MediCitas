@@ -38,6 +38,8 @@ for entry in "${SERVICES[@]}"; do
   fi
 
   echo "[flyway] migrating ${db} (schema ${schema})"
+  # Seeds use V900+. A schema migration added later (e.g. V3) must still apply on a volume that
+  # already holds the seeds, hence outOfOrder=true; on a fresh volume the natural order is kept.
   # The password is passed through the environment, never on the command line.
   FLYWAY_PASSWORD="$password" flyway \
     -url="jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${db}" \
@@ -50,7 +52,7 @@ for entry in "${SERVICES[@]}"; do
     -validateMigrationNaming=true \
     -connectRetries=20 \
     -cleanDisabled=true \
-    -outOfOrder=false \
+    -outOfOrder=true \
     migrate
 done
 
