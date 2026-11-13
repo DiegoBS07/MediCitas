@@ -29,3 +29,19 @@ export function readonlyPool(prefix: string, database: string): DatabasePool {
 
 export const CLINIC_1 = '10000000-0000-4000-8000-000000000001';
 export const CLINIC_2 = '10000000-0000-4000-8000-000000000002';
+
+/**
+ * Owner login (<prefix>_owner), used ONLY to clean up rows created by integration tests in tables
+ * where runtime roles have no DELETE grant by design (e.g. control-plane tenants).
+ */
+export function ownerPool(prefix: 'tm' | 'onb' | 'um' | 'umo' | 'cat' | 'sch' | 'ao', database: string): DatabasePool {
+  return createDatabasePool({
+    host: HOST,
+    port: Number(process.env['POSTGRES_HOST_PORT'] ?? 5432),
+    database,
+    user: `${prefix}_owner`,
+    password: env(`${prefix.toUpperCase()}_DB_OWNER_PASSWORD`),
+    applicationName: 'medicitas-tests-cleanup',
+    maxConnections: 1,
+  });
+}
