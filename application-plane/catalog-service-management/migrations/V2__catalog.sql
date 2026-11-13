@@ -1,7 +1,7 @@
 -- =============================================================================
 -- catalog-service-management (database medicitas_catalog, schema catalog) — RF3, RF4
 -- Professionals live here (not in user-management) so that "a professional only
--- performs services of their specialty" is a local, transactional rule (ADR-0001).
+-- performs services of their specialty" is a local, transactional rule.
 -- =============================================================================
 
 CREATE TABLE tenants (

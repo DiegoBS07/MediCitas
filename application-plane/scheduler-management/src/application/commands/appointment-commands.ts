@@ -14,7 +14,7 @@ import type { SchedulerRepository } from '../ports/scheduler-ports.js';
 
 export interface CommandResult<T> {
   readonly value: T;
-  /** Availability changes to invalidate in the cache after COMMIT (ADR-0008 write path). */
+  /** Availability changes to invalidate in the cache after COMMIT. */
   readonly changes: readonly AvailabilityChange[];
 }
 
@@ -39,7 +39,7 @@ async function bumpAll(
 }
 
 /**
- * RF10 in ONE READ COMMITTED transaction (ADR-0007 §RF10): anchors → versions → appointment row →
+ * RF10 in ONE READ COMMITTED transaction: anchors → versions → appointment row →
  * UPDATE old to `rescheduled` (frees the slot) → INSERT the new `booked` row. Any failure rolls back
  * everything, so the original stays booked; there is never a state with two (or zero) occupied slots.
  */

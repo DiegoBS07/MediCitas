@@ -2,14 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { EXCHANGES, EnvelopeSchema, type Envelope } from '@medicitas/messaging';
 import { MessageTap } from '../support/services.js';
-import { GATEWAY, api, availability, book, codeOf, expectStatus, localDate, type ApiResult, type Appointment } from './support/api.js';
-import { createPatient, createProfessional, seededToken, tokenOf, type TestProfessional } from './support/fixture.js';
+import { GATEWAY, api, availability, book, codeOf, expectStatus, localDate, type ApiResult, type Appointment } from '../acceptance/support/api.js';
+import { createPatient, createProfessional, seededToken, tokenOf, type TestProfessional } from '../acceptance/support/fixture.js';
 
 /**
- * The documented contracts, verified on the running system: REST conventions (api-contracts §1:
- * problem+json, stable codes, correlation, idempotency, pagination, the three booking outcomes of
- * statement §6.2) and the messaging contract (messaging-contracts: versioned envelope, correlation
- * propagated from the HTTP request through the saga to the domain event, no personal data).
+ * The API and messaging contracts, verified on the running system: REST conventions (problem+json,
+ * stable codes, correlation, idempotency, pagination, the three booking outcomes) and the messaging
+ * contract (versioned envelope, correlation propagated from the HTTP request through the saga to the
+ * domain event, no personal data).
  */
 const fixture = inject('acceptance');
 const DATE = localDate(fixture.timezone, 12);
@@ -33,8 +33,8 @@ function expectProblem(result: ApiResult<unknown>, status: number, code: string)
 
 beforeAll(async () => {
   token = await tokenOf(fixture.receptionists[0]);
-  professional = await createProfessional(fixture, { name: 'Dr. Contrato' });
-  patientId = await createPatient(token, 'Contrato');
+  professional = await createProfessional(fixture, { name: 'Dr. Contract' });
+  patientId = await createPatient(token, 'Contract');
   slots = expectStatus(await availability(token, professional.professionalId, fixture.serviceId, DATE), 200).body.data.slots.map((slot) => slot.startAt);
 });
 
@@ -69,11 +69,11 @@ describe('REST error model (RFC 9457) and stable codes on every error class', ()
   });
 });
 
-describe('RF9 distinguishes its three outcomes (statement §6.2)', () => {
+describe('RF9 distinguishes its three outcomes', () => {
   it('granted → 201 + Location; slot already taken → 409; invalid request → 400/422/404', async () => {
     const granted = expectStatus(await book(token, { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: String(slots[0]) }), 201);
     expect(granted.headers.get('location')).toBe(`/api/v1/appointments/${granted.body.data.appointmentId}`);
-    const otherPatient = await createPatient(token, 'Contrato');
+    const otherPatient = await createPatient(token, 'Contract');
     expectProblem(await book(token, { patientId: otherPatient, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: String(slots[0]) }), 409, 'SLOT_TAKEN');
     expectProblem(await api('POST', '/api/v1/appointments', { token, idempotencyKey: true, body: { professionalId: professional.professionalId } }), 400, 'VALIDATION_FAILED');
     expectProblem(await book(token, { patientId: otherPatient, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: `${DATE}T06:00:00-06:00` }), 422, 'OUTSIDE_WORKING_HOURS');
@@ -81,7 +81,7 @@ describe('RF9 distinguishes its three outcomes (statement §6.2)', () => {
   });
 });
 
-describe('idempotency (api-contracts §1.7)', () => {
+describe('idempotency', () => {
   it('replays the original response for the same key and body, refuses a reused key with another body, requires the key', async () => {
     const key = `acc-idem-${randomUUID()}`;
     const input = { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: String(slots[4]) };
@@ -99,7 +99,7 @@ describe('idempotency (api-contracts §1.7)', () => {
 
   it('honours an optional key on patient registration', async () => {
     const key = `acc-patient-${randomUUID()}`;
-    const body = { identificationType: 'passport', identificationNumber: `IDEM-${randomUUID().slice(0, 8)}`, firstName: 'Idem', lastName: 'Potente', birthDate: '1990-01-01' };
+    const body = { identificationType: 'passport', identificationNumber: `IDEM-${randomUUID().slice(0, 8)}`, firstName: 'Idem', lastName: 'Potent', birthDate: '1990-01-01' };
     const first = expectStatus(await api<{ data: { patientId: string } }>('POST', '/api/v1/patients', { token, idempotencyKey: key, body }), 201);
     const replay = expectStatus(await api<{ data: { patientId: string } }>('POST', '/api/v1/patients', { token, idempotencyKey: key, body }), 201);
     expect(replay.body.data.patientId).toBe(first.body.data.patientId);
@@ -107,7 +107,7 @@ describe('idempotency (api-contracts §1.7)', () => {
   });
 });
 
-describe('keyset pagination (api-contracts §1.6)', () => {
+describe('keyset pagination', () => {
   it('walks a list page by page without duplicates and validates limit and cursor', async () => {
     const seen: string[] = [];
     let cursor: string | null = null;
@@ -159,7 +159,7 @@ describe('messaging contract on the live broker', () => {
     expect(event.causationId).not.toBeNull();
     expect(event.actor).toMatchObject({ subject: fixture.receptionists[0].subject });
     expect(event.payload).toMatchObject({ appointmentId: booked.appointmentId, professionalId: professional.professionalId, patientId });
-    expect(JSON.stringify(event)).not.toContain('Contrato'); // the patient's name never travels in events
+    expect(JSON.stringify(event)).not.toContain('Contract'); // the patient's name never travels in events
   });
 
   it('a platform-admin token cannot reach clinic data even though it is valid (no tenant in the token)', async () => {

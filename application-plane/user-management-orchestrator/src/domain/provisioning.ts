@@ -37,7 +37,7 @@ const done = (step: SagaStepRecord | undefined): boolean => step !== undefined &
 const bad = (step: SagaStepRecord | undefined): boolean => step?.status === 'rejected' || step?.status === 'failed';
 
 /**
- * RF2 decisions (ADR-0012 with the Stage 4 refinement S4-2):
+ * RF2 decisions:
  *  creation   — reserve (DB) → Keycloak user → activate (DB); compensation = delete the Keycloak user
  *               created by THIS saga + cancel the reservation; the row is kept as provisioning_failed.
  *  role/deactivation — the DB command runs FIRST (it enforces LAST_CLINIC_ADMIN under a lock); then
@@ -100,7 +100,7 @@ export function nextStep(saga: SagaRecord, steps: readonly SagaStepRecord[]): Ne
   }
 }
 
-/** HTTP status of a terminal failure (api-contracts §3.3). */
+/** HTTP status of a terminal failure. */
 export function httpStatusOf(code: string): number {
   switch (code) {
     case 'EMAIL_TAKEN':

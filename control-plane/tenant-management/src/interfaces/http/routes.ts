@@ -12,7 +12,7 @@ const listQuery = z
   .strict();
 const cursorShape = z.tuple([z.string().min(1).max(64), uuidSchema]);
 
-/** Control-plane reads (api-contracts §3.2): platform administrator only (tenants:read). */
+/** Control-plane reads: platform administrator only (tenants:read). */
 export function tenantRoutes(pool: DatabasePool) {
   return (router: Router): void => {
     const platformRead = (subject: string) =>

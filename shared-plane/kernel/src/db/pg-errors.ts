@@ -23,7 +23,7 @@ export function pgErrorInfo(error: unknown): PgErrorInfo {
   };
 }
 
-/** SQLSTATEs that mean "the same transaction may succeed if replayed" (ADR-0007). */
+/** SQLSTATEs that mean "the same transaction may succeed if replayed". */
 export const RETRYABLE_TRANSACTION_STATES: ReadonlySet<string> = new Set([
   '40001', // serialization_failure
   '40P01', // deadlock_detected

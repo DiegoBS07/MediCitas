@@ -26,7 +26,7 @@ const step = (name: string, status: SagaStepRecord['status'], result: Record<str
   errorCode,
 });
 
-describe('RF2 user creation saga (ADR-0012)', () => {
+describe('RF2 user creation saga', () => {
   it('reserves, creates the identity, then activates with the Keycloak subject', () => {
     expect(nextStep(saga('user-creation', 'started'), [step('reserve_user', 'dispatched')])).toEqual({ kind: 'wait' });
     expect(nextStep(saga('user-creation', 'started'), [step('reserve_user', 'succeeded')])).toMatchObject({ kind: 'local', step: 'keycloak_user' });
@@ -49,7 +49,7 @@ describe('RF2 user creation saga (ADR-0012)', () => {
     });
   });
 
-  it('deletes again an identity created by an in-flight call after the first deletion ran (P5)', () => {
+  it('deletes again an identity created by an in-flight call after the first deletion ran', () => {
     const compensating = saga('user-creation', 'compensating', 'DEPENDENCY_UNAVAILABLE');
     expect(
       nextStep(compensating, [step('keycloak_user', 'succeeded', { keycloakSubject: 'k' }), step('delete_keycloak_user', 'succeeded', { deleted: false }), step('cancel_reservation', 'succeeded')]),
@@ -57,7 +57,7 @@ describe('RF2 user creation saga (ADR-0012)', () => {
   });
 });
 
-describe('RF2 role change and deactivation (decision-log S4-4)', () => {
+describe('RF2 role change and deactivation', () => {
   it('applies the database command first, then makes Keycloak converge', () => {
     expect(nextStep(saga('user-role-change', 'started'), [step('change_role', 'succeeded', { userId: 'u' })])).toMatchObject({ kind: 'local', step: 'keycloak_role' });
     expect(nextStep(saga('user-role-change', 'started'), [step('change_role', 'rejected', null, 'LAST_CLINIC_ADMIN')])).toEqual({ kind: 'fail', errorCode: 'LAST_CLINIC_ADMIN' });

@@ -67,7 +67,7 @@ describe('appointment state machine (RF13)', () => {
   });
 });
 
-describe('availability helpers (RF7/RF8, ADR-0008)', () => {
+describe('availability helpers (RF7/RF8)', () => {
   it('builds versioned, tenant-scoped cache keys', () => {
     expect(availabilityKey({ tenantId: 't1', professionalId: 'p', serviceId: 's', date: '2026-12-01', version: '4.12.2' })).toBe(
       'availability:v1:tenant:t1:professional:p:service:s:date:2026-12-01:version:4.12.2',

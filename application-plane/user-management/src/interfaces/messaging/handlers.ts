@@ -30,7 +30,7 @@ export const QUEUES = {
 
 const name = z.string().trim().min(1).max(80);
 
-/** Payload schemas v1 (messaging-contracts §6–§8). */
+/** Payload schemas v1. */
 export const ReserveUserPayloadV1 = z.object({
   userId: z.uuid(),
   email: z.email().max(254),

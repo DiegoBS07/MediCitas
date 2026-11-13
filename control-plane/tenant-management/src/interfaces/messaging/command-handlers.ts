@@ -11,7 +11,7 @@ import { PgTenantRepository } from '../../infrastructure/persistence/pg-tenant-r
 
 export const COMMANDS_QUEUE = 'tenant-management.commands';
 
-/** Payload schemas v1 (messaging-contracts §6). Unknown payload fields are ignored (§9.2). */
+/** Payload schemas v1. Unknown payload fields are ignored (forward compatibility). */
 export const CreateTenantPayloadV1 = z.object({
   name: z.string().min(1).max(200),
   slug: z.string().min(1).max(64),

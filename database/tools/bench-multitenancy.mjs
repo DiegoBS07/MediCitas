@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // =============================================================================
-// Module 2 (statement §9.2) — RLS as a second strategy, compared with the
-// discriminator column on the SAME queries and the SAME data (ADR-0004 protocol).
+// Module 2 — RLS as a second strategy, compared with the
+// discriminator column on the SAME queries and the SAME data.
 //
 //   Mode A — discriminator only : role sch_bench_norls (BYPASSRLS, test-only), WHERE tenant_id = $1
 //   Mode B — RLS only           : runtime actor role, NO tenant predicate (the policy alone isolates)

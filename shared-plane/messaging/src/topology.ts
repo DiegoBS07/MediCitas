@@ -1,5 +1,5 @@
 /**
- * Declarative RabbitMQ topology (ADR-0003, docs/contracts/messaging-contracts.md §2–§3).
+ * Declarative RabbitMQ topology.
  * Single source of truth for the broker bootstrap, the consumers and the contract tests.
  */
 
@@ -178,7 +178,7 @@ export const SERVICES: readonly ServiceMessagingDefinition[] = [
     service: 'appointment-orchestrator',
     brokerUser: 'svc_appointment_orchestrator',
     passwordEnv: 'RABBITMQ_AO_PASSWORD',
-    // Domain events: AppointmentBookingFailed (messaging-contracts §8).
+    // Domain events: AppointmentBookingFailed.
     publishesTo: [EXCHANGES.commands, EXCHANGES.events],
     consumes: [repliesQueue('appointment-orchestrator')],
     directReplyTo: 'none',
@@ -251,7 +251,7 @@ export interface BrokerPermissions {
 
 const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Least privilege (ADR-0003): no configure; write only to the exchanges used; read only own queues. */
+/** Least privilege: no configure; write only to the exchanges used; read only own queues. */
 export function permissionsFor(definition: ServiceMessagingDefinition): BrokerPermissions {
   const writeTargets = [
     ...definition.publishesTo,

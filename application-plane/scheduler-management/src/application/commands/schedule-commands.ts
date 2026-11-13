@@ -41,9 +41,9 @@ export interface WeeklyScheduleResult {
 }
 
 /**
- * RF5 as ONE local transaction (no saga, ADR-0006 §3): anchor FOR UPDATE (waits for in-flight
+ * RF5 as ONE local transaction (no saga): anchor FOR UPDATE (waits for in-flight
  * bookings), replace the whole block set, bump schedule_version, and list the future appointments
- * that now fall outside working hours (they are kept and reported, decision-log P1).
+ * that now fall outside working hours (they are kept and reported).
  */
 export async function defineWeeklySchedule(
   repository: SchedulerRepository,

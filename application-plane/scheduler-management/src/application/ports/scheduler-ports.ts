@@ -75,7 +75,7 @@ export interface AuditEntry {
 
 /** Persistence port of the scheduler (inside the caller's transaction; RLS by tenant). */
 export interface SchedulerRepository {
-  // Agenda anchors and versions (ADR-0007 lock order: anchors → versions → appointments)
+  // Agenda anchors and versions (anchors → versions → appointments)
   lockAnchors(professionalIds: readonly string[], mode: 'SHARE' | 'UPDATE'): Promise<readonly string[]>;
   bumpDateVersions(professionalId: string, dates: readonly string[]): Promise<Readonly<Record<string, number>>>;
   bumpScheduleVersion(professionalId: string): Promise<number>;

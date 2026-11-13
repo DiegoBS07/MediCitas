@@ -1,5 +1,5 @@
 -- =============================================================================
--- Reliability tables shared by every service (ADR-0003):
+-- Reliability tables shared by every service:
 --   outbox_messages      transactional outbox
 --   inbox_messages       consumer de-duplication + stored replies
 --   idempotency_records  HTTP Idempotency-Key records

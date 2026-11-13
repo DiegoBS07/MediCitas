@@ -1,6 +1,6 @@
 -- =============================================================================
 -- user-management-orchestrator (database medicitas_user_orchestrator, schema provisioning) — RF2
--- Persisted saga state for user provisioning against Keycloak (ADR-0012).
+-- Persisted saga state for user provisioning against Keycloak.
 -- =============================================================================
 
 CREATE TABLE saga_instances (

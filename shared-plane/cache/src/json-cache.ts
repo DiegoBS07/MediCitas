@@ -4,7 +4,7 @@ import type { RedisConnection } from './client.js';
 
 /**
  * Result of a cache read. A Redis failure is reported as `bypass`, never disguised as a hit or
- * a miss (prompt §11): the caller computes from PostgreSQL and exposes X-Cache: BYPASS.
+ * a miss: the caller computes from PostgreSQL and exposes X-Cache: BYPASS.
  */
 export type CacheRead<T> =
   | { readonly status: 'hit'; readonly value: T }

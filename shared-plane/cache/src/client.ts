@@ -6,7 +6,7 @@ export interface CacheClientConfig {
   readonly port: number;
   readonly username: string;
   readonly password: string;
-  /** Per-command timeout: a slow cache must not slow availability down (ADR-0008: 50 ms). */
+  /** Per-command timeout: a slow cache must not slow availability down (50 ms). */
   readonly commandTimeoutMs?: number;
   readonly connectTimeoutMs?: number;
 }

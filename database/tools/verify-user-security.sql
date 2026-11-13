@@ -1,5 +1,5 @@
 -- =============================================================================
--- Stage 2 engine-level verification for medicitas_user, as the runtime login:
+-- Engine-level security verification for medicitas_user, as the runtime login:
 --   psql -h postgres -U um_app -d medicitas_user -f verify-user-security.sql
 -- =============================================================================
 \set ON_ERROR_STOP on

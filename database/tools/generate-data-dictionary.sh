@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# Generates docs/data/data-dictionary.md from the live catalog (COMMENT ON ...),
+# Generates the Markdown data dictionary from the live catalog (COMMENT ON ...),
 # so the dictionary can never drift from the migrations.
 #
 #   docker compose run --rm --no-deps --entrypoint sh db-bootstrap \

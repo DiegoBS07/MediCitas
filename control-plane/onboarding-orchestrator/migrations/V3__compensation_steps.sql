@@ -1,5 +1,5 @@
 -- =============================================================================
--- onboarding-orchestrator — explicit compensation steps (Stage 4, ADR-0012 / P5).
+-- onboarding-orchestrator — explicit compensation steps.
 -- The Keycloak group and first admin user created by an onboarding saga are
 -- deleted by dedicated, idempotent saga steps when the saga compensates.
 -- =============================================================================

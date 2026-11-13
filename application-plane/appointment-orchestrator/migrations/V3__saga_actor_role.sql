@@ -1,8 +1,8 @@
 -- =============================================================================
--- appointment-orchestrator — actor role of the booking saga (Stage 4).
+-- appointment-orchestrator — actor role of the booking saga.
 -- Commands re-sent or issued by the saga sweeper (compensations after a deadline)
 -- must carry the same actor as the original request, because every participant
--- checks the actor-role allowlist of the message type (messaging-contracts §4).
+-- checks the actor-role allowlist of the message type.
 -- =============================================================================
 
 ALTER TABLE saga_instances ADD COLUMN actor_role text;

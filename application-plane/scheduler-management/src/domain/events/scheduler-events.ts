@@ -1,7 +1,7 @@
 import type { EventSink } from '@medicitas/messaging';
 import type { Appointment } from '../entities/appointment.js';
 
-/** Scheduler domain events (messaging-contracts §8). Payloads never carry note text or patient PII. */
+/** Scheduler domain events. Payloads never carry note text or patient PII. */
 export const SCHEDULER_EVENTS = {
   scheduleDefined: { messageType: 'ProfessionalScheduleDefined', routingKey: 'scheduler.schedule.defined' },
   blockCreated: { messageType: 'CalendarBlockCreated', routingKey: 'scheduler.calendar-block.created' },

@@ -55,7 +55,7 @@ function operationView(saga: SagaRecord) {
   };
 }
 
-/** RF2 writes (api-contracts §3.3): each one is a provisioning saga; reads are served by user-management. */
+/** RF2 writes: each one is a provisioning saga; reads are served by user-management. */
 export function provisioningRoutes(pool: DatabasePool, tables: SagaTables, secrets: EphemeralSecrets, settings: HttpSettings) {
   const read = (context: TenantContext, sagaId: string): Promise<SagaRecord | null> =>
     withTransaction(pool, tenantTransaction(PREFIX, context, { readOnly: true }), (client) => new PgSagaStore(client, tables).find(sagaId));

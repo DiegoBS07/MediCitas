@@ -1,6 +1,6 @@
 -- =============================================================================
 -- scheduler-management — weekly schedules (RF5), calendar blocks (RF6),
--- availability versions (ADR-0008).
+-- availability versions.
 -- =============================================================================
 
 CREATE TABLE weekly_schedule_blocks (
@@ -66,7 +66,7 @@ CREATE INDEX calendar_blocks_active_period_idx ON calendar_blocks USING gist (te
 COMMENT ON INDEX calendar_blocks_active_period_idx IS 'RF7/I3: active blocks overlapping a day or a slot for one professional.';
 
 -- -----------------------------------------------------------------------------
--- Availability versions (cache keys, ADR-0008)
+-- Availability versions (cache keys)
 -- -----------------------------------------------------------------------------
 CREATE TABLE availability_versions (
     tenant_id        uuid        NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE availability_versions (
 COMMENT ON TABLE availability_versions IS
     'Monotonic version per (professional, local date), bumped in the same transaction as any change affecting availability. Absent row = version 0. Part of the Redis key (I8).';
 
--- Bumps the versions of the given local dates in a deterministic order (lock ordering, ADR-0007).
+-- Bumps the versions of the given local dates in a deterministic order (lock ordering).
 CREATE OR REPLACE FUNCTION bump_availability_versions(p_tenant_id uuid, p_professional_id uuid, p_dates date[])
 RETURNS TABLE (local_date date, version bigint)
 LANGUAGE sql AS $$

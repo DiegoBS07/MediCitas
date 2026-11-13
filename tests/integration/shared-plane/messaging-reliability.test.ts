@@ -102,7 +102,7 @@ async function dlqReasons(): Promise<string[]> {
   return messages.map((message) => String((message.properties['headers'] as Record<string, unknown>)['x-dead-letter-reason']));
 }
 
-describe('consumer reliability (ADR-0003)', () => {
+describe('consumer reliability', () => {
   it('delivers a confirmed message once and ACKs it after the handler resolves', async () => {
     temp = await createTempQueue(api);
     const received: InboundMessage<Payload>[] = [];

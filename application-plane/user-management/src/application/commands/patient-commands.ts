@@ -77,7 +77,7 @@ export type EnsurePatientInput =
 
 /**
  * EnsurePatientCommand (RF9 saga step). Idempotent by the orchestrator-generated patientId.
- * Not compensated if the booking later fails (decision-log P2).
+ * Not compensated if the booking later fails.
  */
 export async function ensurePatient(
   patients: PatientRepository,

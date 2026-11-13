@@ -27,7 +27,7 @@ function expectTokenInvalid(input: VerifiedClaims): void {
   }
 }
 
-describe('buildTenantContext (architecture overview §4.1)', () => {
+describe('buildTenantContext', () => {
   it('builds a frozen tenant context for a clinical role, ignoring non-MediCitas roles', () => {
     const context = buildTenantContext(claims(), CORRELATION);
     expect(context.kind).toBe('tenant');

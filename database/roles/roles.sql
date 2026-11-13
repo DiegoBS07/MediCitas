@@ -9,7 +9,7 @@
 --                                    SET ROLE to the actor roles and the worker role.
 --   p_actor       NOLOGIN            Group role: privileges shared by every actor role
 --                                    (outbox, inbox, idempotency, audit inserts, ...).
---   p_<actor>     NOLOGIN            One per permission-matrix profile (ADR-0009).
+--   p_<actor>     NOLOGIN            One per permission-matrix profile.
 --   p_worker      NOLOGIN            Cross-tenant discovery for background loops (outbox relay,
 --                                    saga sweeper, hold-expiry sweeper). Minimal column grants.
 --   p_readonly    LOGIN              Evidence collection (EXPLAIN, test assertions); RLS applies.

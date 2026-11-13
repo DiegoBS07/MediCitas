@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Final index evidence (Stage 7): EXPLAIN (ANALYZE, BUFFERS) of the EXACT SQL the services run (copied
+// Index evidence: EXPLAIN (ANALYZE, BUFFERS) of the EXACT SQL the services run (copied
 // from the repositories), on the production path — actor role via SET LOCAL ROLE and app.tenant_id via
 // set_config, so discriminator + RLS — with the seed and with synthetic history (~20,000 appointments,
 // ~20,000 audit rows and ~20,000 patients per seeded clinic). Everything is ROLLED BACK.

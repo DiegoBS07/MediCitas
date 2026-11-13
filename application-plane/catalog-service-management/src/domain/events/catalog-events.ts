@@ -1,6 +1,6 @@
 import type { CatalogService, Professional, Specialty } from '../entities/catalog.js';
 
-/** Catalog domain events (messaging-contracts §8). They feed the scheduler replicas (D4). */
+/** Catalog domain events. They feed the scheduler replicas. */
 export const CATALOG_EVENTS = {
   specialtyCreated: { messageType: 'SpecialtyCreated', routingKey: 'catalog.specialty.created' },
   serviceCreated: { messageType: 'ServiceCreated', routingKey: 'catalog.service.created' },

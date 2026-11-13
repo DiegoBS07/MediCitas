@@ -83,7 +83,7 @@
     {
       "clientId": "medicitas-cli",
       "name": "MediCitas CLI (local evaluation only)",
-      "description": "Public client with direct access grants for scripts, the request collection and tests (decision-log P6).",
+      "description": "Public client with direct access grants for scripts, the request collection and tests.",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": false,

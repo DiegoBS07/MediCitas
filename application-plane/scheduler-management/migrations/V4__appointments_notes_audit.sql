@@ -59,11 +59,11 @@ CREATE TABLE appointments (
 );
 
 COMMENT ON TABLE appointments IS
-    'Appointment aggregate (owner: scheduler-management, D3). Active = held or booked; only active rows occupy the agenda (I1, I2, I7).';
+    'Appointment aggregate (owner: scheduler-management). Active = held or booked; only active rows occupy the agenda (I1, I2, I7).';
 COMMENT ON COLUMN appointments.patient_id IS 'patients.id in user-management (logical reference validated by the booking saga).';
 COMMENT ON COLUMN appointments.slot IS 'Occupied interval [start, end); its length is the service duration at booking time (I4). Never updated in place.';
 COMMENT ON COLUMN appointments.starts_at IS
-    'Generated lower(slot). Exists because range functions/operators are not LEAKPROOF: under RLS they cannot be index conditions, while timestamptz comparisons can (see docs/data/index-justification.md).';
+    'Generated lower(slot). Exists because range functions/operators are not LEAKPROOF: under RLS they cannot be index conditions, while timestamptz comparisons can.';
 COMMENT ON COLUMN appointments.ends_at IS 'Generated upper(slot); see starts_at.';
 COMMENT ON COLUMN appointments.status IS
     'held (internal saga hold) → booked | released; booked → attended | no_show | cancelled | rescheduled (RF13). Final states have no exit.';
@@ -116,7 +116,7 @@ BEGIN
             USING ERRCODE = 'check_violation', CONSTRAINT = 'appointments_initial_status';
     END IF;
 
-    -- Serialization anchor (ADR-0007). A no-op when the caller already holds it.
+    -- Serialization anchor. A no-op when the caller already holds it.
     PERFORM 1 FROM professional_agendas
     WHERE tenant_id = NEW.tenant_id AND professional_id = NEW.professional_id
     FOR SHARE;
@@ -167,7 +167,7 @@ BEGIN
             USING ERRCODE = 'check_violation', CONSTRAINT = 'appointments_within_working_hours';
     END IF;
 
-    -- Grid alignment relative to the block start (decision-log P7).
+    -- Grid alignment relative to the block start.
     SELECT slot_step_minutes INTO v_step FROM scheduling_settings;
     IF (extract(epoch FROM lower(NEW.slot) - v_block_start)::bigint % (v_step * 60)) <> 0 THEN
         RAISE EXCEPTION 'slot start is not aligned to the % minute grid', v_step
@@ -256,7 +256,7 @@ CREATE TABLE clinical_notes (
     CONSTRAINT clinical_notes_content_length CHECK (char_length(btrim(content)) BETWEEN 1 AND 20000)
 );
 COMMENT ON TABLE clinical_notes IS
-    'Clinical note of an attended appointment (RF15): the most sensitive data. Written only by the appointment professional; immutable (decision-log P3); every read/write is audited.';
+    'Clinical note of an attended appointment (RF15): the most sensitive data. Written only by the appointment professional; immutable; every read/write is audited.';
 COMMENT ON COLUMN clinical_notes.author_subject IS 'Keycloak subject of the authoring professional (must be the appointment professional).';
 COMMENT ON COLUMN clinical_notes.content IS 'Free-text note. Never copied to events, logs or the audit log.';
 

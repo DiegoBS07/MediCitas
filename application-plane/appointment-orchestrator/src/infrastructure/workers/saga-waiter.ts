@@ -2,7 +2,7 @@ import type { DatabaseClient, DatabasePool } from '@medicitas/kernel';
 import type { Logger } from '@medicitas/observability';
 
 /**
- * Wakes HTTP handlers waiting for a saga to finish (ADR-0006 §5). Any replica may finalize a saga;
+ * Wakes HTTP handlers waiting for a saga to finish. Any replica may finalize a saga;
  * the trigger saga_instances_notify_terminal issues NOTIFY saga_terminal, received here through
  * LISTEN. Polling is the fallback, so a lost notification only delays the answer.
  */

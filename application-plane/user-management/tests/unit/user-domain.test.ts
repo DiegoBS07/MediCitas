@@ -43,7 +43,7 @@ describe('user lifecycle (RF2)', () => {
     expect(() => deactivateUser(active, subject, new Date())).toThrowError(expect.objectContaining({ code: 'INVALID_STATE_TRANSITION' }));
     const inactive = deactivateUser(active, '30000000-0000-4000-8000-000000010001', new Date());
     expect(inactive.user).toMatchObject({ status: 'inactive' });
-    // api-contracts §3.3: deactivating an inactive user is 409 INVALID_STATE_TRANSITION (found by the Stage 6 acceptance suite).
+    // deactivating an inactive user is 409 INVALID_STATE_TRANSITION (covered by the acceptance suite).
     expect(() => deactivateUser(inactive.user, null, new Date())).toThrowError(expect.objectContaining({ code: 'INVALID_STATE_TRANSITION' }));
   });
 });

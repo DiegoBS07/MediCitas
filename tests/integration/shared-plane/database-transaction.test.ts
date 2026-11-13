@@ -12,7 +12,7 @@ const receptionist = {
   isolation: 'READ COMMITTED' as const,
 };
 
-describe('withTransaction (ADR-0004, ADR-0007, ADR-0009)', () => {
+describe('withTransaction', () => {
   it('switches to the actor role and tenant only for the transaction', async () => {
     const inside = await withTransaction(pool, receptionist, async (client) => {
       const { rows } = await client.query<{ role: string; tenant: string; count: string; foreign: string }>(

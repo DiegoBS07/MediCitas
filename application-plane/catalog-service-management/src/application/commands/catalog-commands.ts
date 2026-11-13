@@ -153,7 +153,7 @@ export async function replaceProfessionalServices(
   return { professional: saved, serviceIds };
 }
 
-/** Reaction to TenantUserDeactivated (ADR-0012): the linked professional stops taking new bookings. */
+/** Reaction to TenantUserDeactivated: the linked professional stops taking new bookings. */
 export async function deactivateProfessionalOfUser(repository: CatalogRepository, events: EventSink, userId: string): Promise<void> {
   const professional = await repository.findProfessionalByUser(userId, { forUpdate: true });
   if (professional === null || professional.status === 'inactive') return;

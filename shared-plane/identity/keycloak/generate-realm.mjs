@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Generates realm-medicitas.json (ADR-0005) from the same deterministic identifiers as the
- * database seeds (docs/data/seed-data.md), so Keycloak subjects and users.keycloak_subject match.
+ * Generates realm-medicitas.json from the same deterministic identifiers as the
+ * database seeds, so Keycloak subjects and users.keycloak_subject match.
  *
  *   node shared-plane/identity/keycloak/generate-realm.mjs
  *
@@ -187,7 +187,7 @@ const realm = {
     {
       clientId: 'medicitas-cli',
       name: 'MediCitas CLI (local evaluation only)',
-      description: 'Public client with direct access grants for scripts, the request collection and tests (decision-log P6).',
+      description: 'Public client with direct access grants for scripts, the request collection and tests.',
       enabled: true,
       publicClient: true,
       standardFlowEnabled: false,

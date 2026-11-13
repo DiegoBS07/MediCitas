@@ -1,6 +1,6 @@
 -- =============================================================================
 -- onboarding-orchestrator (database medicitas_onboarding, schema onboarding) — RF1
--- Persisted saga state (ADR-0012). Platform-scoped: no tenant RLS.
+-- Persisted saga state. Platform-scoped: no tenant RLS.
 -- =============================================================================
 
 CREATE TABLE saga_instances (

@@ -12,7 +12,7 @@ import {
 
 const exchangeNames = new Set(exchangeDefinitions().map((exchange) => exchange.name));
 
-describe('RabbitMQ topology (messaging-contracts §2–§3)', () => {
+describe('RabbitMQ topology', () => {
   it('declares the four functional exchanges, the dead-letter exchange and one retry exchange per service', () => {
     for (const name of Object.values(EXCHANGES)) expect(exchangeNames.has(name)).toBe(true);
     for (const service of SERVICES) expect(exchangeNames.has(retryExchangeOf(service.service))).toBe(true);

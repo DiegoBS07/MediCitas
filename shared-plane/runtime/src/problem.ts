@@ -1,6 +1,6 @@
 import { httpStatusFor, isAppError, type ErrorDetail } from '@medicitas/kernel';
 
-/** RFC 9457 problem document (api-contracts §1.4). */
+/** RFC 9457 problem document. */
 export interface ProblemBody {
   readonly type: string;
   readonly title: string;

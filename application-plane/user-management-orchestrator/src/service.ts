@@ -21,7 +21,7 @@ export interface UserOrchestratorConfig extends ServiceConfig {
   readonly saga: HttpSettings & { readonly sweepIntervalMs: number; readonly localRetryMs: number };
 }
 
-/** Keycloak Admin settings shared by both provisioning orchestrators (ADR-0012). */
+/** Keycloak Admin settings shared by both provisioning orchestrators. */
 export const keycloakAdminEnvSchema = serviceEnvSchema.extend({
   KEYCLOAK_ADMIN_URL: z.url(),
   KEYCLOAK_REALM: z.string().min(1).default('medicitas'),

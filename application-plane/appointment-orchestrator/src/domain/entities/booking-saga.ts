@@ -1,4 +1,4 @@
-/** Booking saga (ADR-0006 §4): STARTED → AWAITING_PARTICIPANTS → CONFIRMING → COMPLETED, or → COMPENSATING → FAILED. */
+/** Booking saga: STARTED → AWAITING_PARTICIPANTS → CONFIRMING → COMPLETED, or → COMPENSATING → FAILED. */
 export const SAGA_STATUSES = ['started', 'awaiting_participants', 'confirming', 'completed', 'compensating', 'failed'] as const;
 export type SagaStatus = (typeof SAGA_STATUSES)[number];
 
@@ -21,7 +21,7 @@ export interface ReplyError {
   readonly retryable: boolean;
 }
 
-/** Business reply as stored on the step (messaging-contracts §6). */
+/** Business reply as stored on the step. */
 export interface StepReply {
   readonly outcome: 'succeeded' | 'rejected' | 'failed';
   readonly result: Readonly<Record<string, unknown>> | null;
@@ -76,7 +76,7 @@ function step(steps: readonly SagaStep[], name: StepName): SagaStep | undefined 
 const isBad = (candidate: SagaStep | undefined): boolean => candidate?.status === 'rejected' || candidate?.status === 'failed';
 
 /**
- * Aggregation rules (ADR-0006 §4). Pure: given the saga and its steps, what happens next.
+ * Aggregation rules. Pure: given the saga and its steps, what happens next.
  * A compensation (ReleaseSlotCommand) is needed if and only if the slot step succeeded or its
  * outcome is still unknown; the release is idempotent and a no-op for a slot that was never held.
  */
@@ -91,7 +91,7 @@ export function decide(saga: BookingSaga, steps: readonly SagaStep[]): Decision 
       if (!PARTICIPANTS.every((name) => step(steps, name)?.status === 'succeeded')) return { kind: 'wait' };
       const catalog = step(steps, 'catalog')?.reply?.result ?? {};
       const held = slot?.reply?.result ?? {};
-      // D4 cross-check: the scheduler computed the interval from its replica; Catalog is authoritative.
+      // Replica cross-check: the scheduler computed the interval from its replica; Catalog is authoritative.
       const coherent = catalog['durationMinutes'] === held['durationMinutes'] && catalog['serviceVersion'] === held['serviceVersion'];
       return coherent ? { kind: 'confirm' } : { kind: 'compensate', errorCode: 'CATALOG_REPLICA_STALE' };
     }
@@ -112,7 +112,7 @@ export function decide(saga: BookingSaga, steps: readonly SagaStep[]): Decision 
   }
 }
 
-/** Precedence of the final failure reason (ADR-0006 §4 rule 5): the most specific business error wins. */
+/** Precedence of the final failure reason: the most specific business error wins. */
 const PRECEDENCE: readonly (readonly string[])[] = [
   ['SLOT_TAKEN'],
   ['PATIENT_OVERLAP'],
@@ -170,7 +170,7 @@ function defaultDetail(code: string): string {
   }
 }
 
-/** HTTP status of a terminal failure (api-contracts §3.7). */
+/** HTTP status of a terminal failure. */
 export function httpStatusOf(code: string): number {
   if (code === 'SLOT_TAKEN' || code === 'PATIENT_OVERLAP' || code === 'PATIENT_IDENTIFICATION_TAKEN') return 409;
   if (code === 'RESOURCE_NOT_FOUND') return 404;

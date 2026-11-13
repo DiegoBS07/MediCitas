@@ -1,6 +1,6 @@
 import type { Permission } from '@medicitas/identity';
 
-/** Services reachable through the gateway (internal REST, decision D1). */
+/** Services reachable through the gateway (internal REST). */
 export const UPSTREAMS = [
   'tenant-management',
   'onboarding-orchestrator',
@@ -39,7 +39,7 @@ const route = (method: HttpMethod, path: string, access: RouteAccess, upstream: 
 });
 
 /**
- * Explicit routing table (api-contracts §2): no prefix guessing. Under /professionals/{id}, the
+ * Explicit routing table: no prefix guessing. Under /professionals/{id}, the
  * weekly-schedule and calendar-blocks sub-resources belong to the scheduler; /patients/{id}/appointments
  * belongs to the scheduler. A contract test compares this table with the documented catalog.
  */

@@ -72,7 +72,7 @@ const professionalListQuery = z
   .object({ status: z.enum(CATALOG_STATUSES).optional(), specialtyId: uuidSchema.optional(), serviceId: uuidSchema.optional(), ...pageQuery })
   .strict();
 
-/** RF3/RF4 (api-contracts §3.4). Writes need catalog:manage; reads catalog:read. */
+/** RF3/RF4. Writes need catalog:manage; reads catalog:read. */
 export function catalogRoutes(pool: DatabasePool, directory: UserDirectory) {
   const read = <T>(context: TenantContext, work: (repository: PgCatalogRepository) => Promise<T>): Promise<T> =>
     withTransaction(pool, tenantTransaction(PREFIX, context, { readOnly: true }), (client) => work(new PgCatalogRepository(client)));

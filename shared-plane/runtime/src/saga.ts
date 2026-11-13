@@ -3,7 +3,7 @@ import { EXCHANGES, createEnvelope, enqueueOutbox, type ActorRole, type ServiceN
 import type { Logger } from '@medicitas/observability';
 
 /**
- * Generic persisted process manager for the provisioning sagas (ADR-0012): onboarding (RF1) and
+ * Generic persisted process manager for the provisioning sagas: onboarding (RF1) and
  * user provisioning (RF2). Both databases share the saga_instances / saga_steps shape.
  *
  * Steps are of two kinds:

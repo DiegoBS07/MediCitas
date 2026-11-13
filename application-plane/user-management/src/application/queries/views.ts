@@ -1,7 +1,7 @@
 import type { Patient } from '../../domain/entities/patient.js';
 import type { User } from '../../domain/entities/user.js';
 
-/** Public representations (api-contracts §3.3 and §3.8). */
+/** Public representations. */
 export const toUserView = (user: User) => ({
   userId: user.id,
   keycloakSubject: user.keycloakSubject,

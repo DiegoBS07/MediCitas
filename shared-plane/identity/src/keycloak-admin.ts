@@ -2,7 +2,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { AppError, DependencyUnavailableError } from '@medicitas/kernel';
 
 /**
- * Keycloak Admin REST client used by the orchestrators (ADR-0012):
+ * Keycloak Admin REST client used by the orchestrators:
  * - client-credentials token of `medicitas-provisioner`, cached until 30 s before expiry;
  * - per-call timeout; bounded retry (0.5 s, 1.5 s, 4.5 s) ONLY for network errors, 429 and 5xx;
  * - any other 4xx is permanent (409 is returned to the caller, which reconciles by lookup);

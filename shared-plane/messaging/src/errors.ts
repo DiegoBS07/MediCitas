@@ -1,5 +1,5 @@
 /**
- * Message-processing error classification (ADR-0003):
+ * Message-processing error classification:
  * - PermanentMessageError: the message can never succeed (invalid, not allowed) → DLQ, no retry.
  * - TransientMessageError: infrastructure trouble → delayed retry, then DLQ.
  * Business rejections are NOT errors: the handler commits a `rejected` reply and returns normally.

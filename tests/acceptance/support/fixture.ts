@@ -6,8 +6,8 @@ import { api, eventually, expectStatus } from './api.js';
  * its staff through RF2 and its catalog through RF3/RF4, so acceptance tests never read or modify
  * the demo clinics' data (except where a test deliberately targets them, e.g. isolation).
  *
- * Keycloak issues every token (password grant of the local-evaluation client medicitas-cli, decision
- * P6). RF2 creates users with a TEMPORARY password; the fixture then sets a permanent one through the
+ * Keycloak issues every token (password grant of the local-evaluation client medicitas-cli). RF2
+ * creates users with a TEMPORARY password; the fixture then sets a permanent one through the
  * Keycloak Admin REST API with the provisioner service account, standing in for the user completing
  * the "update password" step of their first login. Passwords are random per run and never printed.
  */
@@ -147,7 +147,7 @@ export async function tokenOf(member: Pick<StaffMember, 'email' | 'password'>): 
   return token;
 }
 
-/** Seeded demo logins (docs/data/seed-data.md), used only by isolation and authorization tests. */
+/** Seeded demo logins, used only by isolation and authorization tests. */
 export const SEEDED = {
   platformAdmin: 'platform.admin@medicitas.test',
   clinic1Admin: 'ana.mora@sanjose.medicitas.test',
@@ -197,15 +197,15 @@ export async function onboardClinic(runId: string): Promise<AcceptanceFixture> {
   }, 20_000, 250, 'first admin replicated');
   const admin: StaffMember = { userId: adminUser.userId, subject: onboarded.body.data.firstAdmin.subject, email: adminEmail, password: adminPassword, role: 'clinic_admin' };
 
-  const [first, second] = await Promise.all([createStaff(admin, 'receptionist', emailDomain, 'Recepción Uno'), createStaff(admin, 'receptionist', emailDomain, 'Recepción Dos')]);
+  const [first, second] = await Promise.all([createStaff(admin, 'receptionist', emailDomain, 'Reception One'), createStaff(admin, 'receptionist', emailDomain, 'Reception Two')]);
   const specialty = await eventually(async () => {
-    const created = await api<{ data: { specialtyId: string } }>('POST', '/api/v1/specialties', { token: adminToken, body: { name: `Medicina General ${runId}` } });
+    const created = await api<{ data: { specialtyId: string } }>('POST', '/api/v1/specialties', { token: adminToken, body: { name: `General Medicine ${runId}` } });
     return created.status === 201 ? created.body.data : undefined;
   }, 20_000, 250, 'catalog ready for the new clinic');
   const service = expectStatus(
     await api<{ data: { serviceId: string } }>('POST', '/api/v1/services', {
       token: adminToken,
-      body: { name: 'Consulta general', specialtyId: specialty.specialtyId, durationMinutes: 30 },
+      body: { name: 'General consultation', specialtyId: specialty.specialtyId, durationMinutes: 30 },
     }),
     201,
     'RF3 service',
@@ -261,7 +261,7 @@ export async function createProfessional(
   fixture: AcceptanceFixture,
   options: { readonly name?: string; readonly serviceIds?: readonly string[]; readonly blocks?: readonly { dayOfWeek: number; startTime: string; endTime: string }[] } = {},
 ): Promise<TestProfessional> {
-  const name = options.name ?? `Dra. Prueba ${randomUUID().slice(0, 4)}`;
+  const name = options.name ?? `Dr. Test ${randomUUID().slice(0, 4)}`;
   const member = await createStaff(fixture.admin, 'health_professional', fixture.emailDomain, name);
   const adminToken = await tokenOf(fixture.admin);
   const professional = expectStatus(
@@ -275,7 +275,7 @@ export async function createProfessional(
   const professionalId = professional.body.data.professionalId;
   const serviceIds = options.serviceIds ?? [fixture.serviceId];
   expectStatus(await api('PUT', `/api/v1/professionals/${professionalId}/services`, { token: adminToken, body: { serviceIds } }), 200, 'RF4 associations');
-  // The scheduler learns about the professional from catalog events (replica, ADR-0006).
+  // The scheduler learns about the professional from catalog events (replica).
   await eventually(async () => {
     const result = await api('PUT', `/api/v1/professionals/${professionalId}/weekly-schedule`, { token: adminToken, body: { blocks: options.blocks ?? DEFAULT_WEEK } });
     return result.status === 200 ? true : undefined;
@@ -286,7 +286,7 @@ export async function createProfessional(
 let patientCounter = 0;
 
 /** RF14: registers a patient of the run clinic. */
-export async function createPatient(token: string, label = 'Paciente'): Promise<string> {
+export async function createPatient(token: string, label = 'Patient'): Promise<string> {
   patientCounter += 1;
   const created = expectStatus(
     await api<{ data: { patientId: string } }>('POST', '/api/v1/patients', {
@@ -295,9 +295,9 @@ export async function createPatient(token: string, label = 'Paciente'): Promise<
         identificationType: 'passport',
         identificationNumber: `ACC-${randomUUID().slice(0, 12)}`,
         firstName: label,
-        lastName: `Prueba ${patientCounter}`,
+        lastName: `Test ${patientCounter}`,
         birthDate: '1990-05-17',
-        contact: { email: `paciente.${randomUUID().slice(0, 6)}@example.test`, phone: '+50688880000' },
+        contact: { email: `patient.${randomUUID().slice(0, 6)}@example.test`, phone: '+50688880000' },
       },
     }),
     201,

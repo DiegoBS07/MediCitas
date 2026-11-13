@@ -11,7 +11,7 @@ const ResultSchema = z.object({
 });
 
 /**
- * GetTenantUserQuery over RabbitMQ direct reply-to (messaging-contracts §7). A timeout is a 503,
+ * GetTenantUserQuery over RabbitMQ direct reply-to. A timeout is a 503,
  * never "not found" (the requester cannot tell a slow responder from a missing user).
  */
 export class RabbitUserDirectory implements UserDirectory {

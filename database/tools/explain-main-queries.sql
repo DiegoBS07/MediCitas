@@ -1,7 +1,7 @@
 -- =============================================================================
 -- EXPLAIN (ANALYZE, BUFFERS) evidence for the main scheduler queries, on the
 -- production path: runtime login sch_app, actor role via SET LOCAL ROLE, tenant
--- context via set_config (discriminator + RLS, mode C of ADR-0004).
+-- context via set_config (discriminator + RLS, the production path).
 --   psql -h postgres -U sch_app -d medicitas_scheduler -f explain-main-queries.sql
 -- Parameters: clinic 1, professional 1 (general medicine), service 1 (30 min),
 -- next Monday in the clinic timezone.

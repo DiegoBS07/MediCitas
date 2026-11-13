@@ -44,7 +44,7 @@ export interface HttpSettings extends OnboardingSettings {
   readonly syncWaitMs: number;
 }
 
-/** Control-plane transactions: no tenant context, platform DB role (ADR-0009). */
+/** Control-plane transactions: no tenant context, platform DB role. */
 const platform = (context: TenantContext, readOnly = false): TransactionContext => ({
   tenantId: null,
   actorSubject: context.subject,
@@ -66,7 +66,7 @@ function operationView(saga: SagaRecord) {
   };
 }
 
-/** RF1 (api-contracts §3.2): POST /tenants starts the onboarding saga; operations are pollable. */
+/** RF1: POST /tenants starts the onboarding saga; operations are pollable. */
 export function onboardingRoutes(pool: DatabasePool, tables: SagaTables, secrets: EphemeralSecrets, settings: HttpSettings) {
   const read = (context: TenantContext, sagaId: string): Promise<SagaRecord | null> =>
     withTransaction(pool, platform(context, true), (client) => new PgSagaStore(client, tables).find(sagaId));
@@ -97,7 +97,7 @@ export function onboardingRoutes(pool: DatabasePool, tables: SagaTables, secrets
       const { temporaryPassword, ...firstAdmin } = body.firstAdmin;
       const request = { name: body.name, slug: body.slug, timezone: body.timezone, firstAdmin: { ...firstAdmin, email: firstAdmin.email.toLowerCase() } };
       const sagaId = newId();
-      // Never persisted: kept in memory until the Keycloak step uses it (ADR-0012).
+      // Never persisted: kept in memory until the Keycloak step uses it.
       secrets.put(sagaId, temporaryPassword);
       let started: { readonly sagaId: string; readonly replayed: boolean };
       try {

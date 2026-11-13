@@ -9,7 +9,7 @@ import { PgSchedulerRepository } from '../persistence/pg-scheduler-repository.js
 const SYSTEM_ACTOR = { subject: 'system:scheduler-management', roles: ['system' as const] };
 
 /**
- * Releases holds whose TTL passed (ADR-0006): a slot can never stay blocked because an
+ * Releases holds whose TTL passed: a slot can never stay blocked because an
  * orchestrator died. Discovery is cross-tenant with the worker role (column-limited, read-only on
  * appointments); each release runs in its own transaction with the tenant's RLS context and the
  * system role. releaseSlot follows the global lock order (versions → appointment row) and re-checks

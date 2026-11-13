@@ -1,10 +1,10 @@
 -- =============================================================================
--- Stage 2 engine-level verification for medicitas_scheduler.
+-- Engine-level security verification for medicitas_scheduler.
 -- Connect as the RUNTIME login (sch_app), exactly as the service will:
 --   psql -h postgres -U sch_app -d medicitas_scheduler -f verify-scheduler-security.sql
 -- Every check prints "PASS ..." or aborts the script with "FAIL ...".
 -- Every transaction is rolled back: the script leaves no data behind.
--- The automated equivalents live in tests/ (Stage 6).
+-- The automated equivalents live in tests/.
 -- =============================================================================
 \set ON_ERROR_STOP on
 \set QUIET on

@@ -19,7 +19,7 @@ export const uuidSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/, 'must be a canonical lowercase UUID');
 
-/** RFC 3339 instant with an explicit offset (naive local timestamps are rejected; api-contracts §1.1). */
+/** RFC 3339 instant with an explicit offset (naive local timestamps are rejected). */
 export const instantSchema = z.iso.datetime({ offset: true, local: false });
 
 /** Local calendar date YYYY-MM-DD (validated as a real date). */

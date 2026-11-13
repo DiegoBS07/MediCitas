@@ -1,7 +1,7 @@
 /**
  * Application error model shared by every service.
  *
- * Every error carries a stable `code` (documented in docs/contracts/api-contracts.md §1.5)
+ * Every error carries a stable `code` (part of the public API contract)
  * and a `category` that maps to an HTTP status and to a messaging classification.
  */
 export type ErrorCategory =

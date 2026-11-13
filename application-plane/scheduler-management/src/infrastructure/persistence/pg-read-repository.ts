@@ -51,7 +51,7 @@ export interface AuditRow {
 export class PgReadRepository {
   constructor(private readonly client: DatabaseClient) {}
 
-  /** Versions and coherence facts read in the SAME snapshot as the slots (REPEATABLE READ, ADR-0008). */
+  /** Versions and coherence facts read in the SAME snapshot as the slots (REPEATABLE READ). */
   async availabilityContext(professionalId: string, serviceId: string, date: string): Promise<AvailabilityContext> {
     const { rows } = await this.client.query<{
       timezone: string;
@@ -166,7 +166,7 @@ export class PgReadRepository {
     return rows.map((row) => ({ ...toAppointment(row), startsAtExact: row.starts_at_exact }));
   }
 
-  /** RF20: the day agenda (local date), all public statuses, without patient names (decision-log P4). */
+  /** RF20: the day agenda (local date), all public statuses, without patient names. */
   async agenda(date: string, professionalId: string | null): Promise<readonly AgendaItem[]> {
     const { rows } = await this.client.query<{
       id: string;

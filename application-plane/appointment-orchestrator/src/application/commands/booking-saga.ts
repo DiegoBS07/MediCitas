@@ -13,7 +13,7 @@ import { PgSagaRepository } from '../../infrastructure/persistence/pg-saga-repos
 import { enqueueBookingFailed, enqueueSagaCommand, stepPayload } from '../../infrastructure/messaging/saga-commands.js';
 
 export interface SagaSettings {
-  /** Deadline of the participant phase (ADR-0006: 15 s; shorter than the 60 s hold TTL). */
+  /** Deadline of the participant phase (15 s; shorter than the 60 s hold TTL). */
   readonly deadlineMs: number;
   /** Interval after which an unanswered command is re-sent with the SAME messageId. */
   readonly resendMs: number;
@@ -104,7 +104,7 @@ export async function compensate(client: DatabaseClient, settings: SagaSettings,
   });
 }
 
-/** → FAILED with the most specific reason (ADR-0006 §4 rule 5); announces AppointmentBookingFailed. */
+/** → FAILED with the most specific reason; announces AppointmentBookingFailed. */
 export async function fail(client: DatabaseClient, saga: BookingSaga, errorCode: string | null, logger: Logger): Promise<void> {
   const repository = new PgSagaRepository(client);
   const reason = failureReason(await repository.steps(saga.id), errorCode ?? saga.errorCode);

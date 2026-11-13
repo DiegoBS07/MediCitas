@@ -1,6 +1,6 @@
 import type { SagaRecord, SagaStepRecord } from '@medicitas/runtime';
 
-/** RF1 saga (ADR-0012): STARTED → TENANT_CREATED → IDENTITY_PROVISIONED → ACTIVATING → COMPLETED, or → COMPENSATING → FAILED. */
+/** RF1 saga: STARTED → TENANT_CREATED → IDENTITY_PROVISIONED → ACTIVATING → COMPLETED, or → COMPENSATING → FAILED. */
 export const COMMANDS = {
   create_tenant: { messageType: 'CreateTenantCommand', routingKey: 'tenant-management.tenant.create' },
   activate_tenant: { messageType: 'ActivateTenantCommand', routingKey: 'tenant-management.tenant.activate' },
@@ -83,7 +83,7 @@ export function nextStep(saga: SagaRecord, steps: readonly SagaStepRecord[]): Ne
   }
 }
 
-/** HTTP status of a terminal failure (api-contracts §3.2). */
+/** HTTP status of a terminal failure. */
 export function httpStatusOf(code: string): number {
   switch (code) {
     case 'TENANT_SLUG_TAKEN':

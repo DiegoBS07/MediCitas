@@ -1,6 +1,6 @@
 import type { Tenant } from '../entities/tenant.js';
 
-/** Domain events of the tenant aggregate (messaging-contracts §8). */
+/** Domain events of the tenant aggregate. */
 export interface FirstAdmin {
   readonly subject: string;
   readonly email: string;

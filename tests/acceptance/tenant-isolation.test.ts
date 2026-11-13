@@ -1,13 +1,16 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { withTransaction } from '@medicitas/kernel';
+import { EXCHANGES, type Envelope } from '@medicitas/messaging';
 import { runtimePool } from '../support/database.js';
+import { MessageTap, ServiceProbe } from '../support/services.js';
 import { api, availability, book, codeOf, expectStatus, localDate, type Appointment } from './support/api.js';
 import { insertPastAppointment } from './support/clock.js';
 import { createPatient, createProfessional, seededToken, tokenOf, type TestProfessional } from './support/fixture.js';
 
 /**
- * Acceptance criterion 4 and invariant I5 ("ningún dato de una clínica resulta accesible desde otra,
- * por ninguna ruta ni combinación de parámetros"). The victim is the run clinic A; attackers are
+ * Acceptance criterion 4 and invariant I5 (no data of one clinic is reachable from another, by any route
+ * or combination of parameters). The victim is the run clinic A; attackers are
  * authenticated staff of the seeded clinics. Every attempt is a deliberate leak attempt: foreign ids
  * in paths, manipulated query parameters, injected tenant headers/body fields, foreign cursors,
  * foreign mutations and a cache-key collision. The engine-level RLS is checked last.
@@ -34,9 +37,9 @@ beforeAll(async () => {
     seededToken('clinic2Receptionist'),
     seededToken('clinic2Admin'),
   ]);
-  professional = await createProfessional(fixture, { name: 'Dr. Aislamiento' });
-  patientId = await createPatient(victimToken, 'Victima');
-  await createPatient(victimToken, 'Victima'); // a second page for the cursor test
+  professional = await createProfessional(fixture, { name: 'Dr. Isolation' });
+  patientId = await createPatient(victimToken, 'Victim');
+  await createPatient(victimToken, 'Victim'); // a second page for the cursor test
   const slots = expectStatus(await availability(victimToken, professional.professionalId, fixture.serviceId, DATE), 200).body.data.slots;
   appointment = expectStatus(
     await book(victimToken, { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: String(slots[0]?.startAt) }),
@@ -54,7 +57,7 @@ beforeAll(async () => {
   attendedId = past.appointmentId;
   const professionalToken = await tokenOf(professional.member);
   expectStatus(await api('POST', `/api/v1/appointments/${attendedId}/outcome`, { token: professionalToken, body: { outcome: 'attended' } }), 200);
-  expectStatus(await api('POST', `/api/v1/appointments/${attendedId}/clinical-note`, { token: professionalToken, body: { content: 'Dato clínico confidencial' } }), 201);
+  expectStatus(await api('POST', `/api/v1/appointments/${attendedId}/clinical-note`, { token: professionalToken, body: { content: 'Confidential clinical data' } }), 201);
   blockId = expectStatus(
     await api<{ data: { blockId: string } }>('POST', `/api/v1/professionals/${professional.professionalId}/calendar-blocks`, {
       token: victimAdmin,
@@ -116,10 +119,10 @@ describe('foreign ids in paths answer 404 RESOURCE_NOT_FOUND (existence is never
 describe('list routes with manipulated parameters never include clinic A data', () => {
   it('lists of clinic 2 contain none of clinic A ids', async () => {
     const lists = await Promise.all([
-      api<{ data: { patientId: string }[] }>('GET', `/api/v1/patients?limit=100&q=Victima`, { token: attacker }),
+      api<{ data: { patientId: string }[] }>('GET', `/api/v1/patients?limit=100&q=Victim`, { token: attacker }),
       api<{ data: { professionalId: string }[] }>(`GET`, `/api/v1/professionals?limit=100&serviceId=${fixture.serviceId}`, { token: attacker }),
       api<{ data: { serviceId: string }[] }>('GET', `/api/v1/services?limit=100&specialtyId=${fixture.specialtyId}`, { token: attacker }),
-      api<{ data: { userId: string }[] }>('GET', '/api/v1/users?limit=100&q=Recepción', { token: attackerAdmin }),
+      api<{ data: { userId: string }[] }>('GET', '/api/v1/users?limit=100&q=Reception', { token: attackerAdmin }),
       api<{ data: { items: { appointmentId: string }[] } }>('GET', `/api/v1/agenda?date=${DATE}`, { token: attacker }),
     ]);
     const serialized = JSON.stringify(lists.map((list) => list.body));
@@ -169,7 +172,7 @@ describe('foreign mutations are refused and leave clinic A untouched', () => {
 
     const intact = expectStatus(await api<{ data: Appointment }>('GET', `/api/v1/appointments/${appointment.appointmentId}`, { token: victimToken }), 200);
     expect(intact.body.data.status).toBe('booked');
-    expect(expectStatus(await api<{ data: { firstName: string } }>('GET', `/api/v1/patients/${patientId}`, { token: victimToken }), 200).body.data.firstName).toBe('Victima');
+    expect(expectStatus(await api<{ data: { firstName: string } }>('GET', `/api/v1/patients/${patientId}`, { token: victimToken }), 200).body.data.firstName).toBe('Victim');
     expect(expectStatus(await api<{ data: { durationMinutes: number } }>('GET', `/api/v1/services/${fixture.serviceId}`, { token: victimToken }), 200).body.data.durationMinutes).toBe(30);
     const schedule = expectStatus(await api<{ data: { blocks: unknown[] } }>('GET', `/api/v1/professionals/${professional.professionalId}/weekly-schedule`, { token: victimToken }), 200);
     expect(schedule.body.data.blocks.length).toBeGreaterThan(0);
@@ -192,7 +195,44 @@ describe('foreign mutations are refused and leave clinic A untouched', () => {
   });
 });
 
-describe('engine-level isolation (Row-Level Security, ADR-0004)', () => {
+describe('RabbitMQ messages with an altered tenant context', () => {
+  let probe: ServiceProbe;
+  let replies: MessageTap;
+  beforeAll(async () => {
+    // Publishes with the real broker identity of the booking orchestrator; replies are observed through a copy queue.
+    probe = new ServiceProbe('appointment-orchestrator');
+    await probe.ready();
+    replies = await MessageTap.open([{ exchange: EXCHANGES.replies, routingKey: 'appointment-orchestrator' }]);
+  });
+  afterAll(async () => {
+    await replies.close();
+    await probe.close();
+  });
+
+  const ensurePatient = (tenantId: string): Envelope =>
+    probe.envelope({
+      messageType: 'EnsurePatientCommand',
+      tenantId,
+      actor: { subject: randomUUID(), roles: ['receptionist'] },
+      sagaId: randomUUID(),
+      stepId: 'patient',
+      replyTo: 'appointment-orchestrator',
+      payload: { mode: 'existing', patientId },
+    });
+
+  it('a command carrying another tenant cannot reach clinic A data; the same command in clinic A context can', async () => {
+    const forged = ensurePatient(CLINIC_2);
+    const legitimate = ensurePatient(fixture.tenantId);
+    await probe.command('user-management.patient.ensure', forged);
+    await probe.command('user-management.patient.ensure', legitimate);
+    const forgedReply = await replies.waitFor((message) => message.commandId === forged.messageId, 15_000);
+    const legitimateReply = await replies.waitFor((message) => message.commandId === legitimate.messageId, 15_000);
+    expect(forgedReply.payload).toMatchObject({ outcome: 'rejected', error: { code: 'RESOURCE_NOT_FOUND' } });
+    expect(legitimateReply.payload).toMatchObject({ outcome: 'succeeded' });
+  });
+});
+
+describe('engine-level isolation (Row-Level Security)', () => {
   const scheduler = runtimePool('sch', 'medicitas_scheduler');
   const users = runtimePool('um', 'medicitas_user');
   afterAll(async () => {

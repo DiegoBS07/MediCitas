@@ -14,7 +14,7 @@ import { insertPastAppointment } from './support/clock.js';
 import { DEFAULT_WEEK, createPatient, createProfessional, createStaff, passwordToken, seededToken, tokenOf, type TestProfessional } from './support/fixture.js';
 
 /**
- * Acceptance criterion 2 ("el ciclo de la cita se cumple"): book, reschedule, cancel and record the
+ * Acceptance criterion 2 (the appointment cycle works): book, reschedule, cancel and record the
  * outcome through the gateway with the declared status codes, and reject every forbidden transition
  * (RF13). Also walks RF1–RF8, RF14–RF16 and RF20–RF21 on the run clinic, end to end over RabbitMQ.
  */
@@ -35,9 +35,9 @@ const slotsOf = async (date = DATE): Promise<readonly string[]> =>
 
 beforeAll(async () => {
   [receptionist, admin] = await Promise.all([tokenOf(fixture.receptionists[0]), tokenOf(fixture.admin)]);
-  professional = await createProfessional(fixture, { name: 'Dra. Ciclo Completo' });
+  professional = await createProfessional(fixture, { name: 'Dr. Full Cycle' });
   professionalToken = await tokenOf(professional.member);
-  patientId = await createPatient(receptionist, 'Ciclo');
+  patientId = await createPatient(receptionist, 'Cycle');
 });
 
 describe('RF1–RF4: the run clinic was onboarded and configured through the API', () => {
@@ -142,12 +142,12 @@ describe('RF9–RF13: book, reschedule, cancel, outcome and the state machine', 
 
   it('RF11 cancels with reason and author, frees the slot, and a cancelled appointment cannot move again', async () => {
     const cancelled = expectStatus(
-      await api<{ data: Appointment }>('POST', `/api/v1/appointments/${current.appointmentId}/cancel`, { token: receptionist, body: { reason: 'Paciente solicitó cancelar' } }),
+      await api<{ data: Appointment }>('POST', `/api/v1/appointments/${current.appointmentId}/cancel`, { token: receptionist, body: { reason: 'Patient asked to cancel' } }),
       200,
       'RF11',
     );
     expect(cancelled.body.data.status).toBe('cancelled');
-    expect(cancelled.body.data.cancellation).toMatchObject({ reason: 'Paciente solicitó cancelar', cancelledBy: fixture.receptionists[0].subject });
+    expect(cancelled.body.data.cancellation).toMatchObject({ reason: 'Patient asked to cancel', cancelledBy: fixture.receptionists[0].subject });
     expect(await slotsOf()).toContain(current.startAt);
     const again = await api('POST', `/api/v1/appointments/${current.appointmentId}/cancel`, { token: receptionist, body: { reason: 'twice' } });
     expect([again.status, codeOf(again)]).toEqual([409, 'INVALID_STATE_TRANSITION']);
@@ -209,7 +209,7 @@ describe('RF9–RF13: book, reschedule, cancel, outcome and the state machine', 
     const note = expectStatus(
       await api<{ data: { noteId: string; authorSubject: string; content?: string } }>('POST', `/api/v1/appointments/${past.appointmentId}/clinical-note`, {
         token: professionalToken,
-        body: { content: 'Paciente estable. Control en un mes.' },
+        body: { content: 'Stable patient. Follow-up in one month.' },
       }),
       201,
       'RF15',
@@ -219,7 +219,7 @@ describe('RF9–RF13: book, reschedule, cancel, outcome and the state machine', 
     const duplicate = await api('POST', `/api/v1/appointments/${past.appointmentId}/clinical-note`, { token: professionalToken, body: { content: 'otra' } });
     expect([duplicate.status, codeOf(duplicate)]).toEqual([409, 'CLINICAL_NOTE_EXISTS']);
     const read = expectStatus(await api<{ data: { content: string } }>('GET', `/api/v1/appointments/${past.appointmentId}/clinical-note`, { token: professionalToken }), 200);
-    expect(read.body.data.content).toBe('Paciente estable. Control en un mes.');
+    expect(read.body.data.content).toBe('Stable patient. Follow-up in one month.');
     const notAttended = await api('POST', `/api/v1/appointments/${inlinePatientBooking.appointmentId}/clinical-note`, { token: professionalToken, body: { content: 'x' } });
     expect([notAttended.status, codeOf(notAttended)]).toEqual([422, 'CLINICAL_NOTE_REQUIRES_ATTENDED']);
   });
@@ -317,7 +317,7 @@ describe('RF5/RF6: blocks and schedule changes list conflicts and never cancel b
 
 describe('RF2: role assignment and logical deactivation', () => {
   it('changes a role, deactivates the user and Keycloak stops issuing tokens to them', async () => {
-    const member = await createStaff(fixture.admin, 'receptionist', fixture.emailDomain, 'Temporal Baja');
+    const member = await createStaff(fixture.admin, 'receptionist', fixture.emailDomain, 'Temporary Leaver');
     expect((await api<{ data: { roles: string[] } }>('GET', '/api/v1/me', { token: await passwordToken(member.email, member.password) })).body.data.roles).toEqual(['receptionist']);
     const promoted = expectStatus(await api<{ data: { role: string } }>('PATCH', `/api/v1/users/${member.userId}/role`, { token: admin, idempotencyKey: true, body: { role: 'clinic_admin' } }), 200);
     expect(promoted.body.data.role).toBe('clinic_admin');

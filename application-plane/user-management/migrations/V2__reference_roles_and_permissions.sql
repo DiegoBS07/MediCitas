@@ -1,6 +1,6 @@
 -- =============================================================================
 -- user-management (database medicitas_user, schema identity)
--- Reference data: the permission matrix (architecture overview §5) as data.
+-- Reference data: the permission matrix as data.
 -- Not tenant-scoped. The identity library holds the same mapping in code; a
 -- contract test asserts both are identical.
 -- =============================================================================
@@ -13,7 +13,7 @@ CREATE TABLE roles (
     CONSTRAINT roles_scope CHECK (scope IN ('platform', 'tenant'))
 );
 
-COMMENT ON TABLE roles IS 'MediCitas roles (Keycloak realm roles). One role per user (decision-log P8).';
+COMMENT ON TABLE roles IS 'MediCitas roles (Keycloak realm roles). One role per user.';
 COMMENT ON COLUMN roles.code IS 'Realm role name carried in realm_access.roles.';
 COMMENT ON COLUMN roles.scope IS 'platform: no tenant; tenant: exactly one tenant.';
 

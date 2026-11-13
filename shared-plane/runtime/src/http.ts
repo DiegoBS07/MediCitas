@@ -19,17 +19,17 @@ declare global {
 export interface HttpAppOptions {
   readonly logger: Logger;
   readonly health: readonly HealthCheck[];
-  /** Verifies the bearer token of every /api route (each service re-validates; ADR-0002). */
+  /** Verifies the bearer token of every /api route (each service re-validates). */
   readonly verifier: JwtVerifier;
   readonly routes: (router: Router) => void;
 }
 
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH']);
-/** Client headers that try to impersonate a tenant, user or role are dropped (api-contracts §1.2). */
+/** Client headers that try to impersonate a tenant, user or role are dropped. */
 const SPOOFING_HEADER = /^x-(tenant|user|role|actor)/i;
 
 /**
- * Express application with the conventions of api-contracts §1: correlation id, JSON-only bodies
+ * Express application with the shared HTTP conventions: correlation id, JSON-only bodies
  * (64 KB), authentication on /api, problem+json errors and unauthenticated health endpoints.
  */
 export function createHttpApp(options: HttpAppOptions): Express {
@@ -135,7 +135,7 @@ export function contextOf(res: Response): TenantContext {
   return context;
 }
 
-/** Envelope actor for messages caused by this request (messaging-contracts §4). */
+/** Envelope actor for messages caused by this request. */
 export function messageActor(context: TenantContext): { readonly subject: string; readonly roles: ActorRole[] } {
   return { subject: context.subject, roles: [...context.roles] };
 }
@@ -147,7 +147,7 @@ const ROLE_SUFFIX: Readonly<Record<Role, string>> = {
   health_professional: 'professional',
 };
 
-/** Database actor role of the caller (ADR-0009), e.g. ("sch", receptionist) → sch_receptionist. */
+/** Database actor role of the caller, e.g. ("sch", receptionist) → sch_receptionist. */
 export function dbRoleOf(prefix: string, context: TenantContext): string {
   return `${prefix}_${ROLE_SUFFIX[context.role]}`;
 }
@@ -169,7 +169,7 @@ export function sendOutcome(res: Response, outcome: IdempotentOutcome, headers: 
 }
 
 /**
- * Transaction context of a tenant-scoped request (ADR-0004/0009): tenant from the verified token
+ * Transaction context of a tenant-scoped request: tenant from the verified token
  * only, the caller's subject, and the caller's DB actor role. A platform token gets 403 here.
  */
 export function tenantTransaction(

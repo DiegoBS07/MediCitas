@@ -7,7 +7,7 @@ import type { DatabaseClient, DatabasePool } from './pool.js';
 export type IsolationLevel = 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE';
 
 /**
- * Security and isolation context of one database transaction (ADR-0004, ADR-0007, ADR-0009).
+ * Security and isolation context of one database transaction.
  * - tenantId     → app.tenant_id   (RLS; null only for control-plane/platform work)
  * - actorSubject → app.actor_subject ("own" rules, audit)
  * - dbRole       → the actor role the runtime login switches to for this transaction only

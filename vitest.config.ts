@@ -35,23 +35,12 @@ export default defineConfig({
         },
       },
       {
+        // Integration against the running Compose stack: the API through the gateway (acceptance,
+        // contracts, concurrency) plus transaction and messaging reliability against the real engines.
         extends: true,
         test: {
           name: 'integration',
-          include: ['tests/integration/**/*.test.ts', 'tests/contract/**/*.test.ts'],
-          setupFiles: ['tests/support/load-env.ts'],
-          globalSetup: ['tests/support/global-setup.ts'],
-          testTimeout: 60_000,
-          hookTimeout: 60_000,
-          fileParallelism: false,
-        },
-      },
-      {
-        // Black-box acceptance against the running Compose containers, through the gateway (Stage 6).
-        extends: true,
-        test: {
-          name: 'acceptance',
-          include: ['tests/acceptance/**/*.test.ts', 'tests/concurrency/**/*.test.ts'],
+          include: ['tests/acceptance/**/*.test.ts', 'tests/contract/**/*.test.ts', 'tests/concurrency/**/*.test.ts', 'tests/integration/**/*.test.ts'],
           setupFiles: ['tests/support/load-env.ts'],
           globalSetup: ['tests/acceptance/global-setup.ts'],
           testTimeout: 120_000,

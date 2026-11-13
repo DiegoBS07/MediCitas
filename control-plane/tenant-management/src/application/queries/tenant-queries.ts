@@ -2,7 +2,7 @@ import type { Tenant, TenantStatus } from '../../domain/entities/tenant.js';
 import { tenantNotFound } from '../../domain/errors/tenant-errors.js';
 import type { TenantListRow, TenantRepository } from '../ports/tenant-repository.js';
 
-/** Public representation (api-contracts §3.2). */
+/** Public representation. */
 export interface TenantView {
   readonly tenantId: string;
   readonly name: string;

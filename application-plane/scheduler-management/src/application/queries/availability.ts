@@ -26,7 +26,7 @@ function assertWithinHorizon(context: { readonly today: string; readonly horizon
 }
 
 /**
- * RF7 read path (ADR-0008). Must run inside a REPEATABLE READ READ ONLY transaction: the versions
+ * RF7 read path. Must run inside a REPEATABLE READ READ ONLY transaction: the versions
  * and the slots come from one snapshot, so a cached value is always built from a coherent state.
  * Invalid or incoherent input never touches the cache.
  */

@@ -12,7 +12,7 @@ import { createPatient, createProfessional, tokenOf, type TestProfessional } fro
  * containers. Each audited request carries its own X-Correlation-Id, which must reach the audit row.
  */
 const fixture = inject('acceptance');
-const NOTE = 'Nota confidencial: hipertensión controlada.';
+const NOTE = 'Confidential note: controlled hypertension.';
 const PHONE = '+50611112222';
 
 interface AuditEntry {
@@ -44,9 +44,9 @@ const auditOf = async (query: string): Promise<AuditEntry[]> =>
 
 beforeAll(async () => {
   [admin, receptionist] = await Promise.all([tokenOf(fixture.admin), tokenOf(fixture.receptionists[0])]);
-  [professional, otherProfessional] = await Promise.all([createProfessional(fixture, { name: 'Dr. Bitácora' }), createProfessional(fixture, { name: 'Dra. Ajena' })]);
+  [professional, otherProfessional] = await Promise.all([createProfessional(fixture, { name: 'Dr. Audit' }), createProfessional(fixture, { name: 'Dr. Outsider' })]);
   professionalToken = await tokenOf(professional.member);
-  patientId = await createPatient(receptionist, 'Auditado');
+  patientId = await createPatient(receptionist, 'Audited');
   const past = await insertPastAppointment({
     tenantId: fixture.tenantId,
     professionalId: professional.professionalId,
@@ -87,7 +87,7 @@ describe('RF18: every read and write of clinical notes is audited, including den
   it('never copies the clinical content into the log', async () => {
     const entries = await auditOf(`patientId=${patientId}&limit=100`);
     expect(entries.length).toBeGreaterThan(0);
-    expect(JSON.stringify(entries)).not.toContain('hipertensión');
+    expect(JSON.stringify(entries)).not.toContain('hypertension');
   });
 });
 

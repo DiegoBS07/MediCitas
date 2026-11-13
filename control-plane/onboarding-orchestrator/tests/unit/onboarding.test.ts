@@ -26,7 +26,7 @@ const step = (name: string, status: SagaStepRecord['status'], result: Record<str
   errorCode,
 });
 
-describe('RF1 onboarding saga (ADR-0012)', () => {
+describe('RF1 onboarding saga', () => {
   it('creates the tenant, then the Keycloak group and admin, then activates', () => {
     expect(nextStep(saga('started'), [step('create_tenant', 'succeeded', { tenantId: 't1' })])).toEqual({
       kind: 'local',

@@ -28,7 +28,7 @@ function invalidTransition(from: TenantStatus, to: TenantStatus): ConflictError 
   return new ConflictError('INVALID_STATE_TRANSITION', `A tenant cannot go from ${from} to ${to}.`);
 }
 
-/** provisioning → active (point of no return of the onboarding saga, ADR-0012). */
+/** provisioning → active (point of no return of the onboarding saga). */
 export function activate(tenant: Tenant, now: Date): Transition {
   if (tenant.status === 'active') return { tenant, changed: false };
   if (tenant.status !== 'provisioning') throw invalidTransition(tenant.status, 'active');

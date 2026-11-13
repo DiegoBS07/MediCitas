@@ -54,7 +54,7 @@ const bookingBody = z
   .strict();
 
 export interface BookingHttpSettings extends SagaSettings {
-  /** How long POST /appointments waits for a terminal state before answering 202 (ADR-0006: 8 s). */
+  /** How long POST /appointments waits for a terminal state before answering 202 (8 s). */
   readonly syncWaitMs: number;
 }
 
@@ -86,7 +86,7 @@ function respond(res: Response, saga: BookingSaga | null, sagaId: string, replay
     res.status(body.status).type('application/problem+json').json(body.body);
     return;
   }
-  // Still running: 202 is NOT a failure (api-contracts §1.8); the client polls the operation.
+  // Still running: 202 is NOT a failure; the client polls the operation.
   res.setHeader('Location', `/api/v1/appointment-operations/${sagaId}`);
   sendData(res, 202, { operationId: sagaId, status: 'running' });
 }
@@ -97,7 +97,7 @@ function patientRequest(body: z.infer<typeof bookingBody>): PatientRequest {
   return { mode: 'create', patientId: newId(), patient: { ...rest, contact: contact ?? {} } };
 }
 
-/** RF9 (api-contracts §3.7): POST /appointments starts the booking saga; operations are pollable. */
+/** RF9: POST /appointments starts the booking saga; operations are pollable. */
 export function bookingRoutes(pool: DatabasePool, waiter: SagaWaiter, settings: BookingHttpSettings) {
   const readSaga = (context: TenantContext, sagaId: string): Promise<BookingSaga | null> =>
     withTransaction(pool, tenantTransaction(PREFIX, context, { readOnly: true }), (client) => new PgSagaRepository(client).findSaga(sagaId));

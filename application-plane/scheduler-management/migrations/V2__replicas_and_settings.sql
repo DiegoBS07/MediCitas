@@ -1,6 +1,6 @@
 -- =============================================================================
 -- scheduler-management (database medicitas_scheduler, schema scheduling)
--- Read replicas fed by domain events (decision D4, ADR-0001/0006) and settings.
+-- Read replicas fed by domain events and settings.
 -- These tables are DELIBERATE DENORMALIZATIONS: copies of facts owned by
 -- tenant-management and catalog-service-management, kept so that RF5/RF7/RF9
 -- are evaluated locally. Ordering is protected by aggregate versions.
@@ -86,7 +86,7 @@ CREATE TABLE professional_agendas (
     CONSTRAINT professional_agendas_version_non_negative CHECK (schedule_version >= 0)
 );
 COMMENT ON TABLE professional_agendas IS
-    'Lock anchor of a professional agenda (ADR-0007): bookings take FOR SHARE, schedule/block writers take FOR UPDATE. schedule_version is part of the availability cache key (ADR-0008).';
+    'Lock anchor of a professional agenda: bookings take FOR SHARE, schedule/block writers take FOR UPDATE. schedule_version is part of the availability cache key.';
 COMMENT ON COLUMN professional_agendas.schedule_version IS 'Bumped on weekly schedule changes and professional status changes.';
 
 CREATE OR REPLACE FUNCTION catalog_professionals_create_agenda() RETURNS trigger
@@ -116,9 +116,9 @@ CREATE TABLE scheduling_settings (
     CONSTRAINT scheduling_settings_horizon CHECK (booking_horizon_days BETWEEN 1 AND 730),
     CONSTRAINT scheduling_settings_hold_ttl CHECK (hold_ttl_seconds BETWEEN 10 AND 600)
 );
-COMMENT ON TABLE scheduling_settings IS 'Single-row scheduling parameters shared by the database rules and the service (decision-log P7).';
+COMMENT ON TABLE scheduling_settings IS 'Single-row scheduling parameters shared by the database rules and the service.';
 COMMENT ON COLUMN scheduling_settings.slot_step_minutes IS 'Slot grid step, anchored at each weekly block start.';
 COMMENT ON COLUMN scheduling_settings.booking_horizon_days IS 'Maximum days ahead for availability queries and bookings.';
-COMMENT ON COLUMN scheduling_settings.hold_ttl_seconds IS 'Lifetime of a held slot before the sweeper releases it (ADR-0006).';
+COMMENT ON COLUMN scheduling_settings.hold_ttl_seconds IS 'Lifetime of a held slot before the sweeper releases it.';
 
 INSERT INTO scheduling_settings DEFAULT VALUES;

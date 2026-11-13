@@ -15,7 +15,7 @@ import {
   pgErrorInfo,
 } from '../src/index.js';
 
-describe('error model → HTTP status (api-contracts §1.5)', () => {
+describe('error model → HTTP status', () => {
   it.each([
     [new ValidationError('bad'), 400, 'VALIDATION_FAILED'],
     [new AuthenticationError('AUTHENTICATION_REQUIRED', 'none'), 401, 'AUTHENTICATION_REQUIRED'],
@@ -37,7 +37,7 @@ describe('error model → HTTP status (api-contracts §1.5)', () => {
   });
 });
 
-describe('PostgreSQL error classification (ADR-0007)', () => {
+describe('PostgreSQL error classification', () => {
   it('extracts SQLSTATE and constraint names', () => {
     expect(pgErrorInfo({ code: '23P01', constraint: 'appointments_no_professional_overlap', message: 'x' })).toEqual({
       sqlState: '23P01',

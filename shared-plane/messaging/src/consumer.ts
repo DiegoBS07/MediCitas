@@ -79,7 +79,7 @@ const HEADER_LAST_ERROR = 'x-last-error-code';
 const HEADER_DEAD_LETTER_REASON = 'x-dead-letter-reason';
 
 /**
- * Manual-ack consumer implementing the pipeline of messaging-contracts §4:
+ * Manual-ack consumer implementing the reliable consumption pipeline:
  * envelope → producer allowlist (broker-validated user_id) → actor allowlist → payload version
  * → handler → ACK. Failures: permanent → DLQ; otherwise delayed retry tiers, then DLQ.
  * Never uses nack-with-requeue for retries (no hot loops).

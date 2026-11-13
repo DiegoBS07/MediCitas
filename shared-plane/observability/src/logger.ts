@@ -5,7 +5,7 @@ export type { Logger } from 'pino';
 
 /**
  * Paths removed from every log line before serialization: credentials, tokens and personal
- * data (prompt: no secrets, tokens or sensitive data in logs; ADR-0011).
+ * data (no secrets, tokens or sensitive data in logs).
  */
 export const REDACTED_PATHS: readonly string[] = [
   'authorization',

@@ -48,7 +48,7 @@ function combine(statuses: readonly CacheStatus[]): CacheStatus {
   return statuses.length > 0 && statuses.every((status) => status === 'HIT') ? 'HIT' : 'MISS';
 }
 
-/** RF5, RF6, RF7, RF8 (api-contracts §3.5–§3.6). */
+/** RF5, RF6, RF7, RF8. */
 export function scheduleRoutes(deps: SchedulerHttpDeps) {
   return (router: Router): void => {
     router.put('/api/v1/professionals/:professionalId/weekly-schedule', async (req, res) => {

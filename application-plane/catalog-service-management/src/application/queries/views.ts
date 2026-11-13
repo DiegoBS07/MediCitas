@@ -1,6 +1,6 @@
 import type { CatalogService, Professional, Specialty } from '../../domain/entities/catalog.js';
 
-/** Public representations (api-contracts §3.4). */
+/** Public representations. */
 export const toSpecialtyView = (specialty: Specialty) => ({
   specialtyId: specialty.id,
   name: specialty.name,

@@ -6,8 +6,8 @@ import type { NewTenant, TenantRepository } from '../../src/application/ports/te
 
 const base: Tenant = {
   id: '10000000-0000-4000-8000-0000000000aa',
-  slug: 'clinica-prueba',
-  name: 'Clínica Prueba',
+  slug: 'test-clinic',
+  name: 'Test Clinic',
   timezone: 'America/Costa_Rica',
   status: 'provisioning',
   failureReasonCode: null,
@@ -78,7 +78,7 @@ describe('tenant lifecycle (RF1)', () => {
 describe('tenant commands', () => {
   it('is idempotent per onboarding saga and rejects a slug used by another saga', async () => {
     const repository = new MemoryRepository();
-    const input = { name: 'Clínica Prueba', slug: 'clinica-prueba', timezone: 'America/Panama', onboardingSagaId: base.onboardingSagaId };
+    const input = { name: 'Test Clinic', slug: 'test-clinic', timezone: 'America/Panama', onboardingSagaId: base.onboardingSagaId };
     const first = await createTenant(repository, input);
     const second = await createTenant(repository, input);
     expect(second.id).toBe(first.id);

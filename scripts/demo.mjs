@@ -7,7 +7,7 @@
 //   npm run demo -- --pause      # waits for Enter between steps (live defense)
 //   npm run demo -- --outage     # adds the Redis outage step (stops and restarts the redis container)
 //
-// Uses the seeded clinics and users (docs/data/seed-data.md); tokens come from Keycloak (password grant of
+// Uses the seeded clinics and users; tokens come from Keycloak (password grant of
 // the local-evaluation client medicitas-cli). It WRITES demo data (a new clinic, a patient, appointments,
 // one outcome and one clinical note): run `docker compose down -v` to return to the pristine seed.
 // Tokens and passwords are never printed.
@@ -34,10 +34,10 @@ const cyan = color('36');
 
 const rl = PAUSE ? createInterface({ input: process.stdin, output: process.stdout }) : null;
 let stepNumber = 0;
-async function step(title, statement) {
+async function step(title, subtitle) {
   stepNumber += 1;
   if (rl !== null && stepNumber > 1) await rl.question(dim('\n[Enter] next step '));
-  console.log(`\n${bold(cyan(`▶ ${stepNumber}. ${title}`))}${statement === undefined ? '' : dim(`  — ${statement}`)}`);
+  console.log(`\n${bold(cyan(`▶ ${stepNumber}. ${title}`))}${subtitle === undefined ? '' : dim(`  — ${subtitle}`)}`);
 }
 
 async function token(username, password) {
@@ -74,7 +74,7 @@ const ik = () => ({ 'Idempotency-Key': `demo-${randomUUID()}` });
 await step('The stack is up', 'one command: docker compose up --build');
 await call('GET', '/health/ready', { show: (json) => JSON.stringify(json) });
 
-await step('Identity is delegated to Keycloak; the clinic comes from the token', 'RF17, ADR-0005');
+await step('Identity is delegated to Keycloak; the clinic comes from the token', 'RF17');
 const demoPassword = process.env.MEDICITAS_DEMO_USER_PASSWORD ?? '';
 const [platform, admin, receptionist, receptionist2, professional, foreign] = await Promise.all([
   token('platform.admin@medicitas.test', process.env.MEDICITAS_PLATFORM_ADMIN_PASSWORD ?? ''),
@@ -99,11 +99,11 @@ const slug = `demo-${randomUUID().slice(0, 6)}`;
 await call('POST', '/api/v1/tenants', {
   as: platform,
   headers: ik(),
-  body: { name: `Clínica Demo ${slug}`, slug, timezone: 'America/Costa_Rica', firstAdmin: { email: `admin@${slug}.medicitas.test`, firstName: 'Demo', lastName: 'Admin', temporaryPassword: `Tmp-${randomUUID()}` } },
+  body: { name: `Demo Clinic ${slug}`, slug, timezone: 'America/Costa_Rica', firstAdmin: { email: `admin@${slug}.medicitas.test`, firstName: 'Demo', lastName: 'Admin', temporaryPassword: `Tmp-${randomUUID()}` } },
   show: (json) => `tenant ${json.data.tenantId} status=${json.data.status}, first admin ${json.data.firstAdmin.email}`,
 });
 
-await step('Availability of a professional on a date — cache miss, then hit', 'RF7, Redis, ADR-0008');
+await step('Availability of a professional on a date — cache miss, then hit', 'RF7, Redis');
 // The first weekday (Mon–Fri, the seeded professional's working days) from +9 days on, where the seed
 // leaves free slots. No probe request, so the first query below is a genuine cache MISS.
 let date = localDate(9);
@@ -129,7 +129,7 @@ const patient = await call('POST', '/api/v1/patients', {
     identificationType: 'passport',
     identificationNumber: `DEMO-${randomUUID().slice(0, 8)}`,
     firstName: 'Lucía',
-    lastName: 'Demostración',
+    lastName: 'Demo',
     birthDate: '1988-07-14',
     contact: { email: 'lucia.demo@example.test', phone: '+50688881234' },
   },
@@ -151,7 +151,7 @@ console.log(`  ${localTime(slots[0])} still offered? ${slotsOf(after).includes(s
 await step('Two receptionists race for the same slot', 'acceptance criterion 6: exactly one winner');
 const target = slots[slots.length - 1];
 const [p1, p2] = await Promise.all(
-  ['Carrera Uno', 'Carrera Dos'].map(async (name, index) =>
+  ['Race One', 'Race Two'].map(async (name, index) =>
     (await fetch(`${GATEWAY}/api/v1/patients`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${index === 0 ? receptionist : receptionist2}`, 'Content-Type': 'application/json' },
@@ -219,7 +219,7 @@ await call('GET', `/api/v1/agenda?date=${date}`, { as: professional, label: 'RF2
 await call('GET', `/api/v1/reports/appointment-status-counts?from=${date}&to=${date}`, { as: receptionist, label: 'RF21', show: (json) => JSON.stringify(json.data.counts) });
 
 if (OUTAGE) {
-  await step('Redis goes down: the system degrades to PostgreSQL and says so', 'ADR-0008: never fake a hit');
+  await step('Redis goes down: the system degrades to PostgreSQL and says so', 'never fake a hit');
   execFileSync('docker', ['compose', 'stop', 'redis'], { stdio: 'ignore' });
   try {
     await call('GET', `/api/v1/availability?professionalId=${PROFESSIONAL}&serviceId=${SERVICE}&date=${date}`, { as: receptionist, show: showSlots });
@@ -229,5 +229,5 @@ if (OUTAGE) {
   console.log(dim('  redis restarted'));
 }
 
-console.log(`\n${bold(green('Demo complete.'))} ${dim('Automated evidence of every step: npm test (docs/testing/requirements-traceability.md).')}`);
+console.log(`\n${bold(green('Demo complete.'))} ${dim('Automated evidence of every step: npm test.')}`);
 rl?.close();

@@ -18,7 +18,7 @@ const noteBody = z.object({ content: z.string().min(1).max(20_000).refine((value
 
 const deniedNote = (): AuthorizationError => new AuthorizationError('Only the professional of the appointment may access its clinical note.');
 
-/** RF10–RF13 and RF15 (api-contracts §3.7). Each mutation is a single local ACID transaction (ADR-0007). */
+/** RF10–RF13 and RF15. Each mutation is a single local ACID transaction. */
 export function appointmentRoutes(deps: SchedulerHttpDeps) {
   return (router: Router): void => {
     router.get('/api/v1/appointments/:appointmentId', async (req, res) => {

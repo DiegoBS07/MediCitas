@@ -8,9 +8,9 @@ import { createPatient, createProfessional, tokenOf, type TestProfessional } fro
 import { containerHealth, startContainers, stopContainers } from './support/stack.js';
 
 /**
- * Acceptance criterion 5 ("la caché no miente") and invariants I7/I8 against the containers: Redis
+ * Acceptance criterion 5 (the cache does not lie) and invariants I7/I8 against the containers: Redis
  * serves RF7, PostgreSQL stays the source of truth. The key embeds a monotonic availability version
- * that every write bumps in its own transaction (ADR-0008), so a booking makes every previous copy
+ * that every write bumps in its own transaction, so a booking makes every previous copy
  * unreachable before the HTTP response is sent — no TTL wait. Also: miss/hit, cancel/reschedule,
  * blocks, catalog changes, duplicated and out-of-order invalidation events, and Redis outage.
  */
@@ -35,7 +35,7 @@ async function assertNoContradiction(result: ApiResult<Availability>): Promise<v
 
 beforeAll(async () => {
   token = await tokenOf(fixture.receptionists[0]);
-  professional = await createProfessional(fixture, { name: 'Dra. Caché' });
+  professional = await createProfessional(fixture, { name: 'Dr. Cache' });
 });
 
 describe('RF7 cache: miss, hit and immediate invalidation (I7, I8)', () => {
@@ -136,7 +136,7 @@ describe('duplicated and out-of-order invalidation events never resurrect a stal
 
   it('replays an AvailabilityChanged event twice (same messageId) and an older one after a newer booking', async () => {
     const date = localDate(fixture.timezone, 6);
-    const patients = await Promise.all([createPatient(token, 'Evento'), createPatient(token, 'Evento')]);
+    const patients = await Promise.all([createPatient(token, 'Event'), createPatient(token, 'Event')]);
     const view = expectStatus(await query(date), 200);
     // 30-minute slots on a 15-minute grid: index 0 (08:00) and 4 (09:00) do not overlap.
     const [firstSlot, secondSlot] = [String(starts(view)[0]), String(starts(view)[4])];

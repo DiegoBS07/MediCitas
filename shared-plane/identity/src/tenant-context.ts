@@ -2,7 +2,7 @@ import { AuthenticationError, AuthorizationError, isUuid } from '@medicitas/kern
 import { isRole, permissionsOf, type Permission, type Role } from './permissions.js';
 
 /**
- * Immutable security context of one request (architecture overview §4).
+ * Immutable security context of one request.
  * Built ONLY from a token whose signature, issuer, audience and expiry were already verified.
  */
 export interface TenantContext {
@@ -39,7 +39,7 @@ function extractRealmRoles(realmAccess: unknown): readonly Role[] {
 }
 
 /**
- * Applies the claim rules of the architecture overview §4.1 (rules 4–6):
+ * Applies the claim rules of the token:
  * exactly one MediCitas role; platform_admin has no tenant; clinical roles have exactly one valid tenant UUID.
  */
 export function buildTenantContext(claims: VerifiedClaims, correlationId: string): TenantContext {

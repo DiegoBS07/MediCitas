@@ -10,8 +10,8 @@ import { createPatient, createProfessional, tokenOf, type TestProfessional } fro
 import { compose, startContainers, stopContainers } from './support/stack.js';
 
 /**
- * Dependency failure and restart against the real containers (prompt §14 "caída/reinicio de
- * dependencias cuando sea viable"). Every test restores what it stops in a finally block.
+ * Dependency failure and restart against the real containers. Every test restores what it stops in
+ * a finally block.
  *
  *  - A saga participant down during a booking: the command waits in its durable quorum queue; a
  *    timeout is NOT a failure (202 + operation) and the booking completes when the participant returns.
@@ -48,14 +48,14 @@ const slotsOn = async (date: string): Promise<readonly string[]> =>
 
 beforeAll(async () => {
   token = await tokenOf(fixture.receptionists[0]);
-  professional = await createProfessional(fixture, { name: 'Dra. Resiliente' });
+  professional = await createProfessional(fixture, { name: 'Dr. Resilient' });
 });
 
 describe('a saga participant goes down (RF9 never treats a timeout as a failure)', () => {
   it('completes the booking once catalog-service-management comes back within the saga deadline', { timeout: 180_000 }, async () => {
     const date = localDate(fixture.timezone, 13);
     const startAt = String((await slotsOn(date))[0]);
-    const patientId = await createPatient(token, 'Resiliencia');
+    const patientId = await createPatient(token, 'Resilience');
     await stopContainers(['catalog-service-management']);
     let answer: ApiResult<{ data: Appointment }>;
     try {
@@ -76,7 +76,7 @@ describe('a saga participant goes down (RF9 never treats a timeout as a failure)
   it('compensates when the participant stays down past the deadline: nothing booked, slot free, late reply ignored', { timeout: 180_000 }, async () => {
     const date = localDate(fixture.timezone, 14);
     const startAt = String((await slotsOn(date))[0]);
-    const patientId = await createPatient(token, 'Resiliencia');
+    const patientId = await createPatient(token, 'Resilience');
     await stopContainers(['catalog-service-management']);
     try {
       const answer = await book(token, { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt });

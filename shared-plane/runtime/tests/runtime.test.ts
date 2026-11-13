@@ -5,7 +5,7 @@ import { canonicalJson, decodeCursor, encodeCursor, parseInput, requestHash, toP
 
 const correlationId = '4b8a6f0e-2f8e-4b8e-9a51-0f8d0f3c2a11';
 
-describe('problem+json mapping (api-contracts §1.4)', () => {
+describe('problem+json mapping', () => {
   it('maps application errors to their status and stable code', () => {
     const notFound = toProblem(new NotFoundError('patient'), correlationId);
     expect(notFound.status).toBe(404);

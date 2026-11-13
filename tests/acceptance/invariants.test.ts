@@ -5,7 +5,7 @@ import { insertPastAppointment as insertAppointment } from './support/clock.js';
 import { createPatient, createProfessional, tokenOf, type TestProfessional } from './support/fixture.js';
 
 /**
- * At least one test per invariant (statement §5.8), here I1–I4 through the API AND at engine level
+ * At least one test per invariant, here I1–I4 through the API AND at engine level
  * (a direct insert that bypasses every service must still be rejected by PostgreSQL). I5 is covered
  * by tenant-isolation.test.ts, I6 by audit.test.ts, I7/I8 by availability-cache.test.ts.
  */
@@ -26,8 +26,8 @@ const attempt = (patientId: string, startAt: string, professionalId = profession
 
 beforeAll(async () => {
   token = await tokenOf(fixture.receptionists[0]);
-  [professional, second] = await Promise.all([createProfessional(fixture, { name: 'Dr. Invariante' }), createProfessional(fixture, { name: 'Dra. Invariante' })]);
-  [patient, otherPatient] = await Promise.all([createPatient(token, 'Invariante'), createPatient(token, 'Invariante')]);
+  [professional, second] = await Promise.all([createProfessional(fixture, { name: 'Dr. Invariant A' }), createProfessional(fixture, { name: 'Dr. Invariant B' })]);
+  [patient, otherPatient] = await Promise.all([createPatient(token, 'Invariant'), createPatient(token, 'Invariant')]);
   anchor = expectStatus(await attempt(patient, at('09:00')), 201, 'anchor booking').body.data; // 09:00–09:30
 });
 
@@ -139,7 +139,7 @@ describe('I4: the duration is defined by the service and no operation alters it 
     const serviceId = expectStatus(
       await api<{ data: { serviceId: string } }>('POST', '/api/v1/services', {
         token: admin,
-        body: { name: `Duración ${randomUUID().slice(0, 6)}`, specialtyId: fixture.specialtyId, durationMinutes: 30 },
+        body: { name: `Duration ${randomUUID().slice(0, 6)}`, specialtyId: fixture.specialtyId, durationMinutes: 30 },
       }),
       201,
     ).body.data.serviceId;

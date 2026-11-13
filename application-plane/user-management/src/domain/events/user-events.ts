@@ -1,7 +1,7 @@
 import type { Patient } from '../entities/patient.js';
 import type { ClinicRole, User } from '../entities/user.js';
 
-/** Domain events of users and patients (messaging-contracts §8). Payloads never carry contact values. */
+/** Domain events of users and patients. Payloads never carry contact values. */
 export const USER_EVENTS = {
   userActivated: { messageType: 'TenantUserActivated', routingKey: 'user.user.activated' },
   userRoleChanged: { messageType: 'TenantUserRoleChanged', routingKey: 'user.user.role-changed' },

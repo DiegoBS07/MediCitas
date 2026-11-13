@@ -35,7 +35,7 @@ const step = (name: StepName, reply: StepReply | null): SagaStep => ({
   reply,
 });
 
-describe('booking saga aggregation (ADR-0006 §4)', () => {
+describe('booking saga aggregation', () => {
   it('waits for every participant, then confirms when Catalog and the scheduler replica agree', () => {
     const catalog = ok({ durationMinutes: 30, serviceVersion: 3 });
     expect(decide(saga, [step('patient', ok()), step('catalog', catalog), step('slot', null)])).toEqual({ kind: 'wait' });

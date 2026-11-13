@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PERMISSIONS, ROLE_PERMISSIONS, ROLES, permissionsOf } from '../src/index.js';
 
-describe('permission matrix (course minimum, architecture overview §5)', () => {
+describe('permission matrix', () => {
   const can = (role: (typeof ROLES)[number], permission: (typeof PERMISSIONS)[number]): boolean =>
     permissionsOf([role]).has(permission);
 

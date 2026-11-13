@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { parseConfig } from '@medicitas/kernel';
 import { serviceConfigFromEnv, serviceEnvSchema, type ServiceConfig } from '@medicitas/runtime';
 
-/** Scheduler-specific settings (ADR-0008): Redis cache and the hold-expiry sweeper. */
+/** Scheduler-specific settings: Redis cache and the hold-expiry sweeper. */
 export interface SchedulerConfig extends ServiceConfig {
   readonly redis: { readonly host: string; readonly port: number; readonly username: string; readonly password: string } | null;
   readonly cacheTtlSeconds: number;

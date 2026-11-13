@@ -40,7 +40,7 @@ export async function sendCommand(
   });
 }
 
-/** → COMPENSATING: delete what THIS saga created in Keycloak (P5) and mark the tenant failed (row kept). */
+/** → COMPENSATING: delete what THIS saga created in Keycloak and mark the tenant failed (row kept). */
 async function compensate(client: DatabaseClient, store: PgSagaStore, saga: SagaRecord, errorCode: string, settings: OnboardingSettings): Promise<void> {
   for (const step of await store.steps(saga.id)) {
     if ((step.name === 'keycloak_group' || step.name === 'keycloak_admin_user') && (step.status === 'pending' || step.status === 'dispatched')) {

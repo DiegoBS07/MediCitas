@@ -15,7 +15,7 @@ interface PendingQuery {
 }
 
 /**
- * Synchronous query over RabbitMQ direct reply-to (ADR-0003): the reply must reach the exact
+ * Synchronous query over RabbitMQ direct reply-to: the reply must reach the exact
  * process that holds the HTTP request. A timeout becomes 503 — it never means "not found".
  */
 export class QueryClient {

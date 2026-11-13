@@ -29,7 +29,7 @@ const service: CatalogService = {
 };
 
 describe('catalog rules', () => {
-  it('accepts durations that are multiples of 5 between 5 and 480 (I4, P7)', () => {
+  it('accepts durations that are multiples of 5 between 5 and 480 (I4)', () => {
     expect(assertDuration(5)).toBe(5);
     expect(assertDuration(480)).toBe(480);
     for (const invalid of [0, 3, 7, 485, 12.5]) expect(() => assertDuration(invalid)).toThrowError();

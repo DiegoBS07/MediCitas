@@ -22,7 +22,7 @@ export interface MutationResult {
 
 /**
  * Write route skeleton: one READ COMMITTED transaction (optional Idempotency-Key inside it), then,
- * AFTER COMMIT, best-effort cache invalidation of the affected (professional, dates) (ADR-0008).
+ * AFTER COMMIT, best-effort cache invalidation of the affected (professional, dates).
  */
 export async function mutate(
   deps: SchedulerHttpDeps,

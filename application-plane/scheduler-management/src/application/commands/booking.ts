@@ -47,7 +47,7 @@ function heldResult(appointment: Appointment, serviceVersion: number): SlotHeld 
 }
 
 /**
- * HoldSlotCommand (RF9, ADR-0006/0007): READ COMMITTED; anchor FOR SHARE → bump the date version
+ * HoldSlotCommand (RF9): READ COMMITTED; anchor FOR SHARE → bump the date version
  * (serialization point of competing holds) → INSERT `held`. The interval comes from the replica
  * duration (I4). The exclusion constraints decide I1/I2: exactly one competing hold wins.
  */

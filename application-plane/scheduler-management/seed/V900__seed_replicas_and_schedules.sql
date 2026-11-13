@@ -2,7 +2,7 @@
 -- Demo seed (scheduler): replicas identical to the catalog/tenant seeds, weekly
 -- schedules (split shifts) and calendar blocks. In production these replicas are
 -- filled by domain events; the seed writes them directly because seed data is
--- not announced through the outbox (documented in docs/data/seed-data.md).
+-- not announced through the outbox.
 -- =============================================================================
 
 INSERT INTO tenants (id, slug, name, timezone, status, version) VALUES

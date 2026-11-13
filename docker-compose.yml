@@ -59,7 +59,7 @@ x-service-env: &service-env
   RABBITMQ_HOST: rabbitmq
   RABBITMQ_PORT: "5672"
   RABBITMQ_VHOST: ${RABBITMQ_VHOST}
-  # Keys through the internal name; issuer = the public URL clients obtain tokens from (ADR-0005).
+  # Keys through the internal name; issuer = the public URL clients obtain tokens from.
   KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/medicitas/protocol/openid-connect/certs
   KEYCLOAK_PUBLIC_ISSUER: ${KEYCLOAK_PUBLIC_URL}/realms/medicitas
   KEYCLOAK_AUDIENCE: medicitas-api
@@ -202,7 +202,7 @@ services:
 
   redis:
     image: redis:8.8.3-alpine
-    # Cache only (ADR-0008): no persistence, bounded memory, LRU eviction. ACL users (no default user):
+    # Cache only: no persistence, bounded memory, LRU eviction. ACL users (no default user):
     #   scheduler   — availability keys only, cache commands only
     #   healthcheck — PING only
     command:
@@ -267,7 +267,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_ENABLED: "true"
-      # Tokens always carry the public issuer; services fetch keys through the internal name (ADR-0005).
+      # Tokens always carry the public issuer; services fetch keys through the internal name.
       KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Heap capped at 50% of mem_limit so metaspace/native memory never push the JVM over the limit.
@@ -295,10 +295,10 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Domain services (Stage 5). One image per service (multi-stage, non-root, read-only root
+  # Domain services. One image per service (multi-stage, non-root, read-only root
   # filesystem). Only the API gateway publishes a host port; every other service is reachable
   # only inside the medicitas network, by service name. One replica each (RAM budget; the
-  # RF1/RF2 orchestrators also keep temporary passwords in memory, decision-log S4-10).
+  # RF1/RF2 orchestrators also keep temporary passwords in memory).
   # ---------------------------------------------------------------------------
   tenant-management:
     <<: *domain-service

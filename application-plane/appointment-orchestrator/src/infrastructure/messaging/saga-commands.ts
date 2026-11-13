@@ -12,7 +12,7 @@ const ROUTES: Readonly<Record<StepName, { readonly messageType: string; readonly
   release: { messageType: 'ReleaseSlotCommand', routingKey: 'scheduler-management.slot.release' },
 };
 
-/** Command payloads v1 (messaging-contracts §6), built from the persisted saga. */
+/** Command payloads v1, built from the persisted saga. */
 export function stepPayload(
   saga: Pick<BookingSaga, 'appointmentId' | 'patientId' | 'professionalId' | 'serviceId' | 'startAt'>,
   step: StepName,

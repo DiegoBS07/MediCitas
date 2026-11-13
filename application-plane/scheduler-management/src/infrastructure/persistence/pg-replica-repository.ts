@@ -2,7 +2,7 @@ import type { DatabaseClient } from '@medicitas/kernel';
 import { TransientMessageError } from '@medicitas/messaging';
 
 /**
- * Event-fed replicas (decision D4): deliberate denormalizations of tenant/catalog facts. Every
+ * Event-fed replicas: deliberate denormalizations of tenant/catalog facts. Every
  * upsert applies only a NEWER aggregateVersion, so duplicated or out-of-order events are harmless.
  */
 export class PgReplicaRepository {

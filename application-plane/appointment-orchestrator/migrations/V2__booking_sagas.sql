@@ -1,6 +1,6 @@
 -- =============================================================================
 -- appointment-orchestrator (database medicitas_appointment_orchestrator, schema booking) — RF9
--- Booking saga state only (D3): the appointment itself lives in scheduler-management.
+-- Booking saga state only: the appointment itself lives in scheduler-management.
 -- =============================================================================
 
 CREATE TABLE saga_instances (
@@ -36,7 +36,7 @@ CREATE TABLE saga_instances (
 );
 
 COMMENT ON TABLE saga_instances IS
-    'Booking sagas (RF9, ADR-0006). Identifiers (appointment, new patient) are generated before dispatch so every participant is idempotent by id. New-patient PII is not stored here (it travels only in the EnsurePatientCommand outbox row).';
+    'Booking sagas (RF9). Identifiers (appointment, new patient) are generated before dispatch so every participant is idempotent by id. New-patient PII is not stored here (it travels only in the EnsurePatientCommand outbox row).';
 COMMENT ON COLUMN saga_instances.id IS 'Saga identifier; also the public operationId.';
 COMMENT ON COLUMN saga_instances.appointment_id IS 'Appointment id pre-generated for HoldSlotCommand.';
 COMMENT ON COLUMN saga_instances.patient_id IS 'Existing patient id, or the id pre-generated for a new patient.';

@@ -15,7 +15,7 @@ export const ActorSchema = z
 export type Actor = z.infer<typeof ActorSchema>;
 
 /**
- * Versioned envelope (docs/contracts/messaging-contracts.md §4). Validated STRICTLY by every
+ * Versioned envelope. Validated STRICTLY by every
  * consumer; the payload itself is validated by the per-type, per-version schema.
  */
 export const EnvelopeSchema = z

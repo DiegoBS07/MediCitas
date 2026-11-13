@@ -1,6 +1,6 @@
 -- =============================================================================
--- scheduler-management — RLS (ADR-0004) and least-privilege grants aligned with
--- the permission matrix (ADR-0009). Actor roles: sch_clinic_admin,
+-- scheduler-management — RLS and least-privilege grants aligned with
+-- the permission matrix. Actor roles: sch_clinic_admin,
 -- sch_receptionist, sch_professional, sch_system.
 -- =============================================================================
 

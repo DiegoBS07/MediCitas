@@ -3,7 +3,7 @@ import { ROUTES, matchRoute } from '../../src/domain/route-table.js';
 
 const id = '42000000-0000-4000-8000-000000010001';
 
-describe('gateway routing table (api-contracts §2)', () => {
+describe('gateway routing table', () => {
   it('routes professional sub-resources to the scheduler and the rest to catalog', () => {
     expect(matchRoute('GET', `/api/v1/professionals/${id}`)).toMatchObject({ kind: 'found', route: { upstream: 'catalog-service-management' } });
     expect(matchRoute('PUT', `/api/v1/professionals/${id}/services`)).toMatchObject({ route: { upstream: 'catalog-service-management' } });

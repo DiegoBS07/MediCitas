@@ -6,7 +6,7 @@ export type InboxClaim =
   | { readonly duplicate: true; readonly storedReply: Envelope | null };
 
 /**
- * Inserts the inbox row in the SAME transaction as the message effects (ADR-0003).
+ * Inserts the inbox row in the SAME transaction as the message effects.
  * A duplicate delivery finds the row and must not re-apply effects; for commands, the stored
  * reply is returned so it can be re-published to a requester that lost the first one.
  */

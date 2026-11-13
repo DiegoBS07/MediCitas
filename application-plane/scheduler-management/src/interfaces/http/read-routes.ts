@@ -53,7 +53,7 @@ function checkRange(from: string, to: string, maxDays: number): void {
   if (daysBetween(from, to) > maxDays) throw dateRangeTooLarge(maxDays);
 }
 
-/** RF16, RF19, RF20, RF21 (api-contracts §3.8–§3.9): local queries, not broadcast events. */
+/** RF16, RF19, RF20, RF21: local queries, not broadcast events. */
 export function readRoutes(deps: SchedulerHttpDeps) {
   return (router: Router): void => {
     router.get('/api/v1/patients/:patientId/appointments', async (req, res) => {
@@ -62,7 +62,7 @@ export function readRoutes(deps: SchedulerHttpDeps) {
       const { patientId } = parseInput(pathParams({ patientId: uuidSchema }), req.params, 'params');
       const query = parseInput(historyQuery, req.query, 'query');
       const after = decodeCursor(query.cursor, keysetCursor);
-      // Unknown or foreign patient → empty list: the scheduler reveals nothing (api-contracts §3.8).
+      // Unknown or foreign patient → empty list: the scheduler reveals nothing.
       const rows = await withTransaction(deps.pool, tenantTransaction(PREFIX, context, { readOnly: true }), (client) =>
         new PgReadRepository(client).patientHistory({
           patientId,

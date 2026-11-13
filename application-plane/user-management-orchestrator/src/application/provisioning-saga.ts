@@ -38,7 +38,7 @@ function targetUserId(saga: SagaRecord): string {
   return String(saga.request['userId']);
 }
 
-/** → COMPENSATING: delete the Keycloak user only if THIS saga created it (P5), cancel the reservation. */
+/** → COMPENSATING: delete the Keycloak user only if THIS saga created it, cancel the reservation. */
 async function compensate(client: DatabaseClient, store: PgSagaStore, saga: SagaRecord, errorCode: string, settings: ProvisioningSettings): Promise<void> {
   const identity = (await store.steps(saga.id)).find((step) => step.name === 'keycloak_user');
   if (identity !== undefined && (identity.status === 'pending' || identity.status === 'dispatched')) {
@@ -87,7 +87,7 @@ export function provisioningHooks(
           if (user === null || !owned(user.attributes)) throw new PermanentStepError('EMAIL_TAKEN', 'the e-mail already has an identity');
         }
         await keycloak.addRealmRole(user.id, request.role);
-        // Organizational only (ADR-0012): authorization relies on the tenant_id claim, not on groups.
+        // Organizational only: authorization relies on the tenant_id claim, not on groups.
         const group = (await keycloak.groupsByAttribute('tenant_id', tenantId))[0];
         if (group !== undefined) await keycloak.addUserToGroup(user.id, group.id);
         secrets.delete(saga.id);
@@ -104,7 +104,7 @@ export function provisioningHooks(
         return { deleted: true };
       },
 
-      /** Single role per user (P8): remove every other MediCitas clinical role, then add the new one. */
+      /** Single role per user: remove every other MediCitas clinical role, then add the new one. */
       async keycloak_role(saga, steps) {
         const subject = subjectFrom(steps, 'change_role');
         const role = String(saga.request['role']);

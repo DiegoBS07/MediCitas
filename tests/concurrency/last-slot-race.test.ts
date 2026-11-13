@@ -4,10 +4,10 @@ import { activeAppointments, patientOverlaps, professionalOverlaps } from '../ac
 import { createPatient, createProfessional, tokenOf, type TestProfessional } from '../acceptance/support/fixture.js';
 
 /**
- * Acceptance criterion 6 ("la carrera tiene una sola ganadora"), against the running containers:
+ * Acceptance criterion 6 (the race has exactly one winner), against the running containers:
  * the full RF9 saga (gateway → appointment-orchestrator → RabbitMQ → user-management, catalog,
  * scheduler) with the scheduler as the authority of the time constraint (exclusion constraint on
- * tstzrange, READ COMMITTED + retry on serialization/deadlock, ADR-0007).
+ * tstzrange, READ COMMITTED + retry on serialization/deadlock).
  *
  * The professional works ONE 30-minute slot a day (09:00–09:30), so every day offers exactly one —
  * the last — slot. Two distinct receptionists (two real Keycloak identities) race for it, round after
@@ -36,7 +36,7 @@ const onlySlot = async (date: string): Promise<string> => {
 beforeAll(async () => {
   tokens = [await tokenOf(fixture.receptionists[0]), await tokenOf(fixture.receptionists[1])];
   professional = await createProfessional(fixture, {
-    name: 'Dr. Último Espacio',
+    name: 'Dr. Last Slot',
     blocks: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, startTime: '09:00', endTime: '09:30' })),
   });
 });
@@ -46,7 +46,7 @@ describe('two receptionists race for the last slot (RF9, I1)', () => {
     it(`round ${round}: exactly one booking is granted, the other gets 409 SLOT_TAKEN`, async () => {
       const date = localDate(fixture.timezone, 10 + round);
       const startAt = await onlySlot(date);
-      const patients = await Promise.all([createPatient(tokens[0], 'Carrera'), createPatient(tokens[1], 'Carrera')]);
+      const patients = await Promise.all([createPatient(tokens[0], 'Race'), createPatient(tokens[1], 'Race')]);
       const results = await Promise.all(
         tokens.map((token, index) => book(token, { patientId: String(patients[index]), professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt })),
       );
@@ -65,7 +65,7 @@ describe('two receptionists race for the last slot (RF9, I1)', () => {
   it('ten concurrent requests for one slot: one winner, nine SLOT_TAKEN, no duplicate', async () => {
     const date = localDate(fixture.timezone, 30);
     const startAt = await onlySlot(date);
-    const patients = await Promise.all(Array.from({ length: 10 }, (_, index) => createPatient(tokens[index % 2] as string, 'Estampida')));
+    const patients = await Promise.all(Array.from({ length: 10 }, (_, index) => createPatient(tokens[index % 2] as string, 'Stampede')));
     const results = await Promise.all(
       patients.map((patientId, index) => book(tokens[index % 2] as string, { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt })),
     );
@@ -84,12 +84,12 @@ describe('two receptionists race for the last slot (RF9, I1)', () => {
 describe('other races', () => {
   it('one patient booked at the same time with two professionals: one wins, the other gets 409 PATIENT_OVERLAP (I2)', async () => {
     const second = await createProfessional(fixture, {
-      name: 'Dra. Paralela',
+      name: 'Dr. Parallel',
       blocks: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, startTime: '09:00', endTime: '09:30' })),
     });
     const date = localDate(fixture.timezone, 31);
     const startAt = await onlySlot(date);
-    const patientId = await createPatient(tokens[0], 'Duplicada');
+    const patientId = await createPatient(tokens[0], 'Double');
     const results = await Promise.all([
       book(tokens[0], { patientId, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt }),
       book(tokens[1], { patientId, professionalId: second.professionalId, serviceId: fixture.serviceId, startAt }),
@@ -101,7 +101,7 @@ describe('other races', () => {
 
   it('two reschedules into the same free slot: one succeeds atomically, the other keeps its original booking (RF10)', async () => {
     const [dateA, dateB, target] = [localDate(fixture.timezone, 32), localDate(fixture.timezone, 33), localDate(fixture.timezone, 34)];
-    const [patientA, patientB] = await Promise.all([createPatient(tokens[0], 'Reprograma'), createPatient(tokens[1], 'Reprograma')]);
+    const [patientA, patientB] = await Promise.all([createPatient(tokens[0], 'Reschedule'), createPatient(tokens[1], 'Reschedule')]);
     const a = expectStatus(await book(tokens[0], { patientId: patientA, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: await onlySlot(dateA) }), 201).body.data;
     const b = expectStatus(await book(tokens[1], { patientId: patientB, professionalId: professional.professionalId, serviceId: fixture.serviceId, startAt: await onlySlot(dateB) }), 201).body.data;
     const startAt = await onlySlot(target);

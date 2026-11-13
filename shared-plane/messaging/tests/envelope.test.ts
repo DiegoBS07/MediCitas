@@ -13,7 +13,7 @@ const base = {
   payload: { appointmentId: 'a' },
 };
 
-describe('envelope (messaging-contracts §4)', () => {
+describe('envelope', () => {
   it('creates a valid versioned envelope with generated id, timestamp and default causation', () => {
     const envelope = createEnvelope(base);
     expect(envelope.messageVersion).toBe(1);

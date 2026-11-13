@@ -16,7 +16,7 @@ export const dateRangeTooLarge = (maxDays: number): BusinessRuleError =>
 export const notOwnProfessional = (): AuthorizationError => new AuthorizationError('The caller may only act on their own professional profile.');
 
 /**
- * Maps the constraint/trigger that rejected a statement to the stable business code (ADR-0007).
+ * Maps the constraint/trigger that rejected a statement to the stable business code.
  * 23P01 exclusion violations are business answers (I1/I2), never retried.
  */
 const BY_CONSTRAINT: Readonly<Record<string, () => AppError>> = {

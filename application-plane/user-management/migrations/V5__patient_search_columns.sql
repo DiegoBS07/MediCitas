@@ -1,7 +1,7 @@
 -- =============================================================================
 -- user-management — case-insensitive patient search that indexes can serve under RLS.
 --
--- Stage 7 evidence (docs/data/index-justification.md §1c): lower() is not LEAKPROOF, so with RLS
+-- lower() is not LEAKPROOF, so with RLS
 -- active a predicate on lower(last_name) is evaluated AFTER the policy and can never be an index
 -- condition. The expression index patients_last_name_search_idx was therefore never used: with
 -- 20,000 patients per clinic, GET /patients?q= read every row of the tenant (13.8 ms) and the plain

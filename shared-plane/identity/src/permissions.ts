@@ -1,5 +1,5 @@
 /**
- * Permission matrix (architecture overview §5). The same mapping is stored as reference data
+ * Permission matrix. The same mapping is stored as reference data
  * in identity.role_permissions; a contract test asserts both are identical.
  */
 export const ROLES = ['platform_admin', 'clinic_admin', 'receptionist', 'health_professional'] as const;

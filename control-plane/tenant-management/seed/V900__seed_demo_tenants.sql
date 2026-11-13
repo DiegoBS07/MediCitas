@@ -1,9 +1,8 @@
 -- =============================================================================
--- Demo seed: three clinics (statement: "al menos tres clínicas").
+-- Demo seed: three clinics.
 -- Deterministic identifiers shared by every database and by the Keycloak realm:
 --   tenant T            10000000-0000-4000-8000-00000000000T
 --   onboarding saga T   60000000-0000-4000-8000-00000000000T
--- See docs/data/seed-data.md.
 -- =============================================================================
 
 INSERT INTO tenants (id, slug, name, timezone, status, onboarding_saga_id, version, activated_at)

@@ -1,5 +1,5 @@
 -- =============================================================================
--- user-management — Row-Level Security (ADR-0004) and least-privilege grants (ADR-0009)
+-- user-management — Row-Level Security and least-privilege grants
 -- Actor roles: um_clinic_admin, um_receptionist, um_professional, um_system.
 -- =============================================================================
 

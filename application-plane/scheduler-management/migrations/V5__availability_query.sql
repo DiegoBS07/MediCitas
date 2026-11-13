@@ -1,13 +1,13 @@
 -- =============================================================================
 -- scheduler-management — RF7 availability computation (the most frequent query).
--- Kept in the database so that the service, the cache (ADR-0008), the seeds and
+-- Kept in the database so that the service, the cache, the seeds and
 -- the EXPLAIN evidence all use exactly the same definition.
 --
 -- Returns every free slot of the local date (past slots included: the service
 -- filters startAt > now() AFTER the cache, so cached entries do not age).
 -- Both strategies are applied: explicit tenant predicate (discriminator) and RLS.
 -- Call it inside a REPEATABLE READ READ ONLY transaction together with the
--- version lookup (ADR-0007/0008).
+-- version lookup.
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION compute_available_slots(

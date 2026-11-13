@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Request } from 'express';
 import { BusinessRuleError, ConflictError, ValidationError, type DatabaseClient } from '@medicitas/kernel';
 
-/** Idempotency-Key format (api-contracts §1.2). */
+/** Idempotency-Key format. */
 const KEY_FORMAT = /^[A-Za-z0-9_-]{16,64}$/;
 
 /** Reads the Idempotency-Key header; missing or malformed on a `required` route → 400 IDEMPOTENCY_KEY_REQUIRED. */

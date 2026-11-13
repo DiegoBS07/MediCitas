@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ValidationError } from '@medicitas/kernel';
 
-/** Keyset pagination (api-contracts §1.6): limit 1–100 (default 20) and an opaque base64url cursor. */
+/** Keyset pagination: limit 1–100 (default 20) and an opaque base64url cursor. */
 export const limitSchema = z.coerce.number().int().min(1).max(100).default(20);
 export const cursorSchema = z.string().min(1).max(512).optional();
 

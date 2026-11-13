@@ -1,6 +1,6 @@
 /**
  * In-memory, time-limited holder of a temporary password between the HTTP request that received
- * it and the saga step that sends it to Keycloak (ADR-0012). It is NEVER persisted: if the process
+ * it and the saga step that sends it to Keycloak. It is NEVER persisted: if the process
  * restarts (or another replica drives the saga) the secret is gone and the saga compensates with
  * PROVISIONING_INTERRUPTED; the client retries with a new Idempotency-Key.
  */

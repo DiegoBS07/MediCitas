@@ -19,7 +19,7 @@ import { respondToQuery } from './query.js';
 import { EXCHANGES, SERVICE_NAMES, type ServiceName } from './topology.js';
 
 /**
- * Generic consumers for the three message kinds (messaging-contracts §4–§8). They implement the
+ * Generic consumers for the three message kinds. They implement the
  * consumer pipeline once, so services only write the domain effect:
  *
  *   command  → BEGIN; inbox; SAVEPOINT; effect; reply (+ events) to the outbox; COMMIT; ACK
@@ -34,7 +34,7 @@ export interface HandlerRuntime {
   readonly pool: DatabasePool;
   readonly publisher: Publisher;
   readonly logger: Logger;
-  /** <prefix>_system: the DB role used by message consumers (ADR-0009). */
+  /** <prefix>_system: the DB role used by message consumers. */
   readonly systemDbRole: string;
 }
 

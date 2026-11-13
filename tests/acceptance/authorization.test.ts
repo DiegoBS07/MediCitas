@@ -4,12 +4,12 @@ import { api, codeOf, expectStatus } from './support/api.js';
 import { seededToken } from './support/fixture.js';
 
 /**
- * Acceptance criterion 3 ("la identidad se exige y se respeta") over the WHOLE public surface: every
+ * Acceptance criterion 3 (identity is required and respected) over the WHOLE public surface: every
  * one of the 47 routes is called without a token (401), and with a token of each role (403 when the
  * role lacks the permission, anything but 401/403 when it has it).
  *
- * The oracle below is written independently from the code: it is the permission matrix of the course
- * statement (§ "Matriz de permisos") plus the documented extensions (decision-log §3). Requests carry
+ * The oracle below is written independently from the code: it is the course permission matrix plus
+ * its approved extensions (catalog, schedule and appointment reads, agenda and counts). Requests carry
  * empty bodies, no Idempotency-Key and unknown ids, so an allowed call fails validation (400) or finds
  * nothing (404) and never changes data.
  */
@@ -25,12 +25,12 @@ const X = randomUUID(); // unknown id in every tenant
 /** [method, path, roles allowed by the matrix]. `{own}` = the seeded professional's own profile. */
 const MATRIX: readonly (readonly [string, string, readonly Role[]])[] = [
   ['GET', '/api/v1/me', [PA, CA, RE, HP]],
-  // RF1 — alta de clínicas: solo administrador de plataforma (+ tenants:read, extension)
+  // RF1 — clinic onboarding: platform administrator only (+ tenants:read, extension)
   ['POST', '/api/v1/tenants', [PA]],
   ['GET', `/api/v1/tenant-onboardings/${X}`, [PA]],
   ['GET', '/api/v1/tenants', [PA]],
   ['GET', `/api/v1/tenants/${X}`, [PA]],
-  // RF2–RF4 — usuarios, servicios y profesionales: administrador de clínica (lecturas de catálogo: extension)
+  // RF2–RF4 — users, services and professionals: clinic administrator (catalog reads: extension)
   ['POST', '/api/v1/users', [CA]],
   ['PATCH', `/api/v1/users/${X}/role`, [CA]],
   ['POST', `/api/v1/users/${X}/deactivate`, [CA]],
@@ -49,39 +49,39 @@ const MATRIX: readonly (readonly [string, string, readonly Role[]])[] = [
   ['PATCH', `/api/v1/professionals/${X}`, [CA]],
   ['PUT', `/api/v1/professionals/${X}/services`, [CA]],
   ['GET', `/api/v1/professionals/${X}/services`, CLINICAL],
-  // RF5–RF6 — horarios y bloqueos: administrador; profesional solo los propios (lectura: extension)
+  // RF5–RF6 — schedules and blocks: clinic administrator; professionals only their own (reads: extension)
   ['PUT', '/api/v1/professionals/{own}/weekly-schedule', [CA, HP]],
   ['GET', '/api/v1/professionals/{own}/weekly-schedule', CLINICAL],
   ['POST', '/api/v1/professionals/{own}/calendar-blocks', [CA, HP]],
   ['GET', '/api/v1/professionals/{own}/calendar-blocks', CLINICAL],
   ['DELETE', `/api/v1/professionals/{own}/calendar-blocks/${X}`, [CA, HP]],
   ['GET', '/api/v1/schedule-conflicts', CLINICAL],
-  // RF7–RF8 — disponibilidad: los tres roles clínicos
+  // RF7–RF8 — availability: the three clinical roles
   ['GET', '/api/v1/availability', CLINICAL],
   ['GET', '/api/v1/availability/search', CLINICAL],
-  // RF9–RF11 — reservar, reprogramar, cancelar: administrador y recepción
+  // RF9–RF11 — book, reschedule, cancel: clinic administrator and reception
   ['POST', '/api/v1/appointments', [CA, RE]],
   ['GET', `/api/v1/appointment-operations/${X}`, [CA, RE]],
   ['GET', `/api/v1/appointments/${X}`, CLINICAL],
   ['POST', `/api/v1/appointments/${X}/reschedule`, [CA, RE]],
   ['POST', `/api/v1/appointments/${X}/cancel`, [CA, RE]],
-  // RF12 — desenlace: los tres roles clínicos
+  // RF12 — outcome: the three clinical roles
   ['POST', `/api/v1/appointments/${X}/outcome`, CLINICAL],
-  // RF15 — nota clínica: solo el profesional de la cita. The gateway lets clinic users through so the
-  // scheduler can audit denied attempts (decision-log S4-8); it is checked separately below.
+  // RF15 — clinical note: only the appointment's professional. The gateway lets clinic users through so the
+  // scheduler can audit denied attempts; it is checked separately below.
   ['POST', `/api/v1/appointments/${X}/clinical-note`, CLINICAL],
   ['GET', `/api/v1/appointments/${X}/clinical-note`, CLINICAL],
-  // RF14 — pacientes: administrador y recepción; profesional solo lectura
+  // RF14 — patients: clinic administrator and reception; professionals read only
   ['POST', '/api/v1/patients', [CA, RE]],
   ['GET', '/api/v1/patients', CLINICAL],
   ['GET', `/api/v1/patients/${X}`, CLINICAL],
   ['PATCH', `/api/v1/patients/${X}`, [CA, RE]],
-  // RF16 — historial: los tres roles clínicos
+  // RF16 — history: the three clinical roles
   ['GET', `/api/v1/patients/${X}/appointments`, CLINICAL],
-  // RF20/RF21 (extensions) — agenda (profesional: la propia) y conteos
+  // RF20/RF21 (extensions) — agenda (professionals: their own) and counts
   ['GET', '/api/v1/agenda', CLINICAL],
   ['GET', '/api/v1/reports/appointment-status-counts', [CA, RE]],
-  // RF19 — bitácora: solo administrador de clínica
+  // RF19 — audit log: clinic administrator only
   ['GET', '/api/v1/audit-log', [CA]],
 ];
 
@@ -130,7 +130,7 @@ describe('the 47 public routes against the permission matrix (RF17)', () => {
         .filter(({ allowed, result }) => (allowed ? result.status === 401 || result.status === 403 : result.status !== 403 || codeOf(result) !== 'FORBIDDEN'))
         .map(({ route, allowed, result }) => `${route}: ${allowed ? 'allowed' : 'denied'} but got ${result.status} ${codeOf(result) ?? ''}`);
       expect(violations).toEqual([]);
-      // No allowed call may crash the service either (manejo de errores, statement §6.3).
+      // No allowed call may crash the service either (error handling).
       expect(results.filter(({ result }) => result.status >= 500).map(({ route }) => route)).toEqual([]);
     });
   }

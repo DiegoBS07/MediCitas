@@ -39,7 +39,7 @@ export interface Professional {
   readonly updatedAt: Date;
 }
 
-/** Durations: 5–480 minutes, multiples of 5 (decision-log P7; database CHECK services_duration_range). */
+/** Durations: 5–480 minutes, multiples of 5 (database CHECK services_duration_range). */
 export function assertDuration(minutes: number): number {
   if (!Number.isInteger(minutes) || minutes < 5 || minutes > 480 || minutes % 5 !== 0) {
     throw new ValidationError('Invalid service duration.', [

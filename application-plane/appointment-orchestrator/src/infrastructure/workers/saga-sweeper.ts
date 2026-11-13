@@ -7,7 +7,7 @@ import { PgSagaRepository } from '../persistence/pg-saga-repository.js';
 const WORKER = { tenantId: null, actorSubject: null, dbRole: 'ao_worker', isolation: 'READ COMMITTED' } as const;
 
 /**
- * Saga recovery (ADR-0006 "Unknown outcomes"): runs at startup and periodically.
+ * Saga recovery: runs at startup and periodically.
  * 1. Unanswered commands are RE-SENT with the same messageId (participants answer duplicates from their inbox).
  * 2. Sagas past their deadline are compensated, and compensations past their window are failed.
  * Discovery is cross-tenant with the worker role; every change runs with the saga tenant's RLS context.

@@ -1,6 +1,6 @@
 import { ConflictError } from '@medicitas/kernel';
 
-/** Every status of the aggregate; `held` and `released` are internal (never returned by the API, ADR-0006). */
+/** Every status of the aggregate; `held` and `released` are internal (never returned by the API). */
 export const APPOINTMENT_STATUSES = ['held', 'released', 'booked', 'attended', 'no_show', 'cancelled', 'rescheduled'] as const;
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 
@@ -48,7 +48,7 @@ export function assertBooked(appointment: Appointment, action: string): void {
   }
 }
 
-/** Public representation (api-contracts §3.7). */
+/** Public representation. */
 export function toAppointmentView(appointment: Appointment) {
   return {
     appointmentId: appointment.id,
@@ -77,7 +77,7 @@ export function toAppointmentView(appointment: Appointment) {
 
 export type AppointmentView = ReturnType<typeof toAppointmentView>;
 
-/** AppointmentSummary (conflict lists, api-contracts §3.5). */
+/** AppointmentSummary (conflict lists). */
 export function toAppointmentSummary(appointment: Appointment) {
   return {
     appointmentId: appointment.id,

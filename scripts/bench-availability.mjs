@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Availability cache: measurement BEFORE and AFTER the cache (statement §5.6, ADR-0008).
+// Availability cache: measurement BEFORE and AFTER the cache.
 // End to end through the API gateway, as a client sees it (gateway + JWT + scheduler + Redis/PostgreSQL).
 //
 //   Phase 1 — "after":  cache enabled (default). Responses are classified by X-Cache (MISS / HIT).

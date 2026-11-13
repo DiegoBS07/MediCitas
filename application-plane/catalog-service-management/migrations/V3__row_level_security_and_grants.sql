@@ -1,5 +1,5 @@
 -- =============================================================================
--- catalog-service-management — RLS (ADR-0004) and grants (ADR-0009)
+-- catalog-service-management — RLS and grants
 -- Actor roles: cat_clinic_admin (catalog:manage), cat_receptionist and
 -- cat_professional (catalog:read), cat_system (replicas, saga validation).
 -- =============================================================================

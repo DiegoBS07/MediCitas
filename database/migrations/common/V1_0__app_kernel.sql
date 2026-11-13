@@ -20,7 +20,7 @@ $$;
 COMMENT ON SCHEMA app IS 'Shared helper functions: tenant/actor context accessors and generic triggers.';
 
 -- -----------------------------------------------------------------------------
--- Request context (set per transaction with set_config(..., true); ADR-0004)
+-- Request context (set per transaction with set_config(..., true))
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION app.current_tenant_id() RETURNS uuid
 LANGUAGE sql STABLE PARALLEL SAFE

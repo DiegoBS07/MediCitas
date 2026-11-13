@@ -7,7 +7,7 @@ export interface JwtVerifierConfig {
   readonly jwksUrl: string;
   /** Public issuer that Keycloak writes in tokens, e.g. http://localhost:8080/realms/medicitas */
   readonly issuer: string;
-  /** Required audience (ADR-0005): medicitas-api */
+  /** Required audience: medicitas-api */
   readonly audience: string;
   readonly clockToleranceSeconds?: number;
   readonly jwksTimeoutMs?: number;

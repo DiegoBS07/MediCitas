@@ -2,7 +2,7 @@
 -- Demo seed (user-management): tenant replicas, clinic users and patients.
 -- Identifier scheme (T = tenant number 1..3, N = sequence):
 --   user id            20000000-0000-4000-8000-0000000T000N   (N: 1 admin, 2-3 reception, 11-13 professionals)
---   Keycloak subject   30000000-0000-4000-8000-0000000T000N   (must match the realm import, Stage 3)
+--   Keycloak subject   30000000-0000-4000-8000-0000000T000N   (must match the realm import)
 --   patient id         50000000-0000-4000-8000-000T0000000N   (N: 1..120)
 -- Runs as the owner role (BYPASSRLS), so no tenant context is needed.
 -- =============================================================================

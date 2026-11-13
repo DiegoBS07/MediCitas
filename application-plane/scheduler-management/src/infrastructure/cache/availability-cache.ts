@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { JsonCache } from '@medicitas/cache';
 import type { Logger } from '@medicitas/observability';
 
-/** Cached RF7 payload (ADR-0008). The tenant and the version travel in the value and are re-checked on read. */
+/** Cached RF7 payload. The tenant and the version travel in the value and are re-checked on read. */
 export const AvailabilityEntrySchema = z.object({
   tenantId: z.uuid(),
   professionalId: z.uuid(),
