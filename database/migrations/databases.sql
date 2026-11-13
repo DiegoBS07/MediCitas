@@ -41,6 +41,12 @@ CROSS JOIN LATERAL (
 ) AS r(role_name)
 WHERE r.role_name <> d.prefix || '_bench_norls' OR d.has_bench \gexec
 
+-- OLTP workload: disable JIT compilation. The planner's cost estimate for RF7 (generate_series candidates
+-- joined with anti-joins) exceeds jit_above_cost, and compiling took 20–40 ms on EVERY execution of a
+-- query that runs in about 1 ms without it (Stage 7 measurement, docs/data/index-justification.md §1b).
+-- Short transactional queries never amortize JIT; it is meant for long analytical scans (Stage 2 of the course).
+SELECT format('ALTER DATABASE %I SET jit = off', db_name) FROM service_databases \gexec
+
 -- Per-database hardening and extensions (requires connecting to each database).
 \connect medicitas_tenant
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
