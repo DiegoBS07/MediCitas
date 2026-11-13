@@ -54,9 +54,12 @@ export function changeRole(user: User, role: ClinicRole): UserTransition {
   return { user: { ...user, role, version: user.version + 1 }, changed: true };
 }
 
-/** active → inactive (logical delete). A clinic admin can never deactivate their own account. */
+/**
+ * active → inactive (logical delete). A clinic admin can never deactivate their own account.
+ * An already inactive user is an invalid transition (api-contracts §3.3, 409): duplicated deliveries
+ * of the same command are answered from the inbox, and HTTP retries by the Idempotency-Key.
+ */
 export function deactivateUser(user: User, actorSubject: string | null, now: Date): UserTransition {
-  if (user.status === 'inactive') return { user, changed: false };
   if (user.status !== 'active') throw invalid(`A ${user.status} user cannot be deactivated.`);
   if (actorSubject !== null && user.keycloakSubject === actorSubject) {
     throw invalid('A clinic administrator cannot deactivate their own account.');
