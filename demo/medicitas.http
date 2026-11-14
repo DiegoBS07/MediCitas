@@ -1,0 +1,146 @@
+# MediCitas — versioned request collection (VS Code "REST Client" format; the JetBrains HTTP client
+# understands the same requests). The command-line demo is demo/demo.mjs; this file is for exploring
+# the API by hand.
+#
+# Passwords are NOT stored here: they are read from the environment of the editor process. Start the
+# editor from a shell where .env is exported, e.g.  set -a; . ./.env; set +a; code .
+# Seeded logins: docs/data/seed-data.md. Contract: docs/contracts/api-contracts.md.
+
+@gateway = http://localhost:8000
+@keycloak = http://localhost:8080
+@professionalId = 42000000-0000-4000-8000-000000010001
+@serviceId = 41000000-0000-4000-8000-000000010001
+@date = 2026-12-01
+
+### 1. Token of a receptionist of clinic 1 (Keycloak issues every token)
+# @name receptionistLogin
+POST {{keycloak}}/realms/medicitas/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=medicitas-cli&username=carlos.jimenez@sanjose.medicitas.test&password={{$processEnv MEDICITAS_DEMO_USER_PASSWORD}}
+
+### 2. Token of the clinic-1 administrator
+# @name adminLogin
+POST {{keycloak}}/realms/medicitas/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=medicitas-cli&username=ana.mora@sanjose.medicitas.test&password={{$processEnv MEDICITAS_DEMO_USER_PASSWORD}}
+
+### 3. Token of a receptionist of clinic 2 (isolation checks)
+# @name foreignLogin
+POST {{keycloak}}/realms/medicitas/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=medicitas-cli&username=diego.araya@heredia.medicitas.test&password={{$processEnv MEDICITAS_DEMO_USER_PASSWORD}}
+
+@receptionist = {{receptionistLogin.response.body.access_token}}
+@admin = {{adminLogin.response.body.access_token}}
+@foreign = {{foreignLogin.response.body.access_token}}
+
+### 4. Who am I (tenant taken from the token)
+GET {{gateway}}/api/v1/me
+Authorization: Bearer {{receptionist}}
+
+### 5. 401 — no token
+GET {{gateway}}/api/v1/patients
+
+### 6. 403 — receptionist on the audit log (clinic admin only, RF19)
+GET {{gateway}}/api/v1/audit-log
+Authorization: Bearer {{receptionist}}
+
+### 7. RF7 availability (repeat it: X-Cache MISS → HIT)
+GET {{gateway}}/api/v1/availability?professionalId={{professionalId}}&serviceId={{serviceId}}&date={{date}}
+Authorization: Bearer {{receptionist}}
+
+### 8. RF8 availability by service over a range (max 14 days)
+GET {{gateway}}/api/v1/availability/search?serviceId={{serviceId}}&from={{date}}&to=2026-12-07
+Authorization: Bearer {{receptionist}}
+
+### 9. RF14 register a patient
+# @name patient
+POST {{gateway}}/api/v1/patients
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+
+{
+  "identificationType": "passport",
+  "identificationNumber": "HTTP-{{$randomInt 100000 999999}}",
+  "firstName": "Lucía",
+  "lastName": "Colección",
+  "birthDate": "1988-07-14",
+  "contact": { "email": "lucia@example.test", "phone": "+50688881234" }
+}
+
+@patientId = {{patient.response.body.data.patientId}}
+
+### 10. RF9 book (use a startAt returned by request 7) — 201 / 409 SLOT_TAKEN / 400-422-404
+# @name booking
+POST {{gateway}}/api/v1/appointments
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+Idempotency-Key: http-collection-{{$guid}}
+
+{
+  "patient": { "id": "{{patientId}}" },
+  "professionalId": "{{professionalId}}",
+  "serviceId": "{{serviceId}}",
+  "startAt": "{{date}}T08:00:00-06:00"
+}
+
+@appointmentId = {{booking.response.body.data.appointmentId}}
+
+### 11. RF10 reschedule (atomic)
+# @name reschedule
+POST {{gateway}}/api/v1/appointments/{{appointmentId}}/reschedule
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+
+{ "startAt": "{{date}}T09:00:00-06:00" }
+
+@currentId = {{reschedule.response.body.data.current.appointmentId}}
+
+### 12. RF13 invalid transition: cancel the rescheduled (final) appointment → 409
+POST {{gateway}}/api/v1/appointments/{{appointmentId}}/cancel
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+
+{ "reason": "invalid on purpose" }
+
+### 13. RF12 outcome before the start time → 422 OUTCOME_BEFORE_START
+POST {{gateway}}/api/v1/appointments/{{currentId}}/outcome
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+
+{ "outcome": "attended" }
+
+### 14. RF11 cancel with reason
+POST {{gateway}}/api/v1/appointments/{{currentId}}/cancel
+Authorization: Bearer {{receptionist}}
+Content-Type: application/json
+
+{ "reason": "Patient asked to cancel" }
+
+### 15. RF16 history of the patient
+GET {{gateway}}/api/v1/patients/{{patientId}}/appointments
+Authorization: Bearer {{receptionist}}
+
+### 16. RF20 clinic-wide agenda of the day
+GET {{gateway}}/api/v1/agenda?date={{date}}
+Authorization: Bearer {{receptionist}}
+
+### 17. RF21 counts by status
+GET {{gateway}}/api/v1/reports/appointment-status-counts?from={{date}}&to={{date}}
+Authorization: Bearer {{receptionist}}
+
+### 18. RF19 audit log of the patient (contact read/write entries)
+GET {{gateway}}/api/v1/audit-log?patientId={{patientId}}
+Authorization: Bearer {{admin}}
+
+### 19. I5 — clinic 2 asks for the clinic-1 patient → 404
+GET {{gateway}}/api/v1/patients/{{patientId}}
+Authorization: Bearer {{foreign}}
+X-Tenant-Id: 10000000-0000-4000-8000-000000000001
+
+### 20. I5 — a tenant id smuggled in the query string → 400
+GET {{gateway}}/api/v1/patients?tenantId=10000000-0000-4000-8000-000000000001
+Authorization: Bearer {{foreign}}
