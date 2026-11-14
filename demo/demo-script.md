@@ -27,13 +27,13 @@ Duration: about 1 minute without pauses. The script writes demo data (a clinic, 
 | # | Step (script output) | What it shows | Point to defend | Automated evidence |
 |---|---|---|---|---|
 | 1 | Stack up | `/health/ready` 200 | One command, no manual steps; services reach each other by name | `docs/operations/services.md` (clean start: 113 s) |
-| 2 | Tokens from Keycloak, `GET /me` | `tenantId` comes from the token; the platform admin has none | Identity delegated (no login/JWT code of ours); tenant claim from a user attribute set at provisioning (ADR-0005) | `tests/acceptance/authorization.test.ts` |
-| 3 | 401 / 403 / 200 | No token → 401; receptionist on the audit log → 403; platform admin on patients → 403 | Gateway checks the permission matrix; services re-validate (ADR-0002) | `authorization.test.ts` (47 routes × 5 principals) |
-| 4 | Onboard a clinic | 201, tenant `active`, first admin | RF1 saga: tenant-management + Keycloak group/admin, compensation (ADR-0012) | `tests/acceptance/appointment-lifecycle.test.ts` (RF1) |
-| 5 | Availability MISS → HIT | `X-Cache` header, version | Redis is a cache, never a source of truth; key = tenant + professional + service + date + version (ADR-0008) | `availability-cache.test.ts`, `docs/data/cache-report.md` |
-| 6 | Register patient, book | 201 + `Location`, duration from the service | RF9 saga: patient, catalog and slot in parallel; scheduler is the authority of time (ADR-0006) | `appointment-lifecycle.test.ts`, `contracts.test.ts` (three outcomes) |
+| 2 | Tokens from Keycloak, `GET /me` | `tenantId` comes from the token; the platform admin has none | Identity delegated (no login/JWT code of ours); tenant claim from a user attribute set at provisioning | `tests/acceptance/authorization.test.ts` |
+| 3 | 401 / 403 / 200 | No token → 401; receptionist on the audit log → 403; platform admin on patients → 403 | Gateway checks the permission matrix; services re-validate | `authorization.test.ts` (47 routes × 5 principals) |
+| 4 | Onboard a clinic | 201, tenant `active`, first admin | RF1 saga: tenant-management + Keycloak group/admin, compensation | `tests/acceptance/appointment-lifecycle.test.ts` (RF1) |
+| 5 | Availability MISS → HIT | `X-Cache` header, version | Redis is a cache, never a source of truth; key = tenant + professional + service + date + version | `availability-cache.test.ts`, `docs/data/cache-report.md` |
+| 6 | Register patient, book | 201 + `Location`, duration from the service | RF9 saga: patient, catalog and slot in parallel; scheduler is the authority of time | `appointment-lifecycle.test.ts`, `contracts.test.ts` (three outcomes) |
 | 7 | Query again | slot gone, new version, `MISS` | **Criterion 5 / I8**: the version is bumped inside the booking transaction, before the HTTP answer | `availability-cache.test.ts` "criterion 5" |
-| 8 | Two receptionists race | one 201, one 409 `SLOT_TAKEN` | **Criterion 6 / I1**: GiST exclusion constraint on `tstzrange`, READ COMMITTED + retry on serialization/deadlock (ADR-0007) | `tests/concurrency/last-slot-race.test.ts` (5 rounds + 10-way race) |
+| 8 | Two receptionists race | one 201, one 409 `SLOT_TAKEN` | **Criterion 6 / I1**: GiST exclusion constraint on `tstzrange`, READ COMMITTED + retry on serialization/deadlock | `tests/concurrency/last-slot-race.test.ts` (5 rounds + 10-way race) |
 | 9 | Reschedule, invalid transition | previous `rescheduled`, current `booked`, old slot free; cancel a rescheduled one → 409 | RF10 in one transaction (I7); RF13 state machine | `appointment-lifecycle.test.ts` |
 | 10 | Cancel | reason and author recorded | RF11; slot freed at once (I7) | same |
 | 11 | Outcome, note, audit | past appointment → attended; the professional writes the note; the receptionist is denied and the denial is in the audit log | RF12 (database clock), RF15 (author only), RF18/RF19; audit log append-only at engine level (I6) | `audit.test.ts` |

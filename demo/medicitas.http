@@ -4,7 +4,7 @@
 #
 # Passwords are NOT stored here: they are read from the environment of the editor process. Start the
 # editor from a shell where .env is exported, e.g.  set -a; . ./.env; set +a; code .
-# Seeded logins: docs/data/seed-data.md. Contract: docs/contracts/api-contracts.md.
+# Seeded logins: docs/data/seed-data.md. Contract: README.md, section 2.
 
 @gateway = http://localhost:8000
 @keycloak = http://localhost:8080
