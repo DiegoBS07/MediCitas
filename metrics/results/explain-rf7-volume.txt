@@ -1,0 +1,123 @@
+-- Regenerated 2026-11-13T05:14:32Z (jit=off at database level)
+Pager usage is off.
+BEGIN
+ALTER TABLE
+INSERT 0 8008
+ANALYZE
+ active_appointments_of_professional 
+-------------------------------------
+                                8149
+(1 row)
+
+SET
+                                                                                                                                 QUERY PLAN                                                                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort (actual time=0.338..0.341 rows=15.00 loops=1)
+   Sort Key: g.g
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=34
+   InitPlan 1
+     ->  Seq Scan on tenants t_1 (actual time=0.006..0.016 rows=1.00 loops=1)
+           Filter: (id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)
+           Rows Removed by Filter: 28
+           Buffers: shared hit=1
+   InitPlan 2
+     ->  Seq Scan on tenants t_2 (actual time=0.004..0.013 rows=1.00 loops=1)
+           Filter: (id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)
+           Rows Removed by Filter: 28
+           Buffers: shared hit=1
+   ->  Nested Loop Anti Join (actual time=0.275..0.329 rows=15.00 loops=1)
+         Join Filter: (cb.period && tstzrange(g.g, (g.g + make_interval(0, 0, 0, 0, 0, s.duration_minutes, '0'::double precision)), '[)'::text))
+         Rows Removed by Join Filter: 30
+         Buffers: shared hit=34
+         ->  Nested Loop Anti Join (actual time=0.227..0.271 rows=15.00 loops=1)
+               Join Filter: ((a.ends_at > g.g) AND (a.starts_at < (g.g + make_interval(0, 0, 0, 0, 0, s.duration_minutes, '0'::double precision))))
+               Rows Removed by Join Filter: 169
+               Buffers: shared hit=32
+               ->  Nested Loop (actual time=0.082..0.177 rows=30.00 loops=1)
+                     Buffers: shared hit=19
+                     ->  Nested Loop (actual time=0.063..0.141 rows=2.00 loops=1)
+                           Buffers: shared hit=17
+                           ->  Nested Loop (actual time=0.055..0.122 rows=2.00 loops=1)
+                                 Buffers: shared hit=15
+                                 ->  Nested Loop (actual time=0.048..0.090 rows=2.00 loops=1)
+                                       Buffers: shared hit=11
+                                       ->  Nested Loop (actual time=0.041..0.067 rows=2.00 loops=1)
+                                             Buffers: shared hit=7
+                                             ->  Bitmap Heap Scan on weekly_schedule_blocks b (actual time=0.032..0.035 rows=2.00 loops=1)
+                                                   Recheck Cond: ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid))
+                                                   Filter: ((day_of_week)::numeric = '1'::numeric)
+                                                   Rows Removed by Filter: 8
+                                                   Heap Blocks: exact=1
+                                                   Buffers: shared hit=5
+                                                   ->  Bitmap Index Scan on weekly_schedule_blocks_no_overlap (actual time=0.021..0.021 rows=10.00 loops=1)
+                                                         Index Cond: ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid))
+                                                         Index Searches: 1
+                                                         Buffers: shared hit=4
+                                             ->  Seq Scan on tenants t (actual time=0.005..0.015 rows=1.00 loops=2)
+                                                   Filter: (id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)
+                                                   Rows Removed by Filter: 28
+                                                   Buffers: shared hit=2
+                                       ->  Seq Scan on catalog_services s (actual time=0.004..0.010 rows=1.00 loops=2)
+                                             Filter: ((id = '41000000-0000-4000-8000-000000010001'::uuid) AND (status = 'active'::text) AND (tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid))
+                                             Rows Removed by Filter: 69
+                                             Buffers: shared hit=4
+                                 ->  Seq Scan on catalog_professionals p (actual time=0.004..0.015 rows=1.00 loops=2)
+                                       Filter: ((status = 'active'::text) AND (id = '42000000-0000-4000-8000-000000010001'::uuid) AND (tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid))
+                                       Rows Removed by Filter: 86
+                                       Buffers: shared hit=4
+                           ->  Seq Scan on catalog_professional_services ps (actual time=0.005..0.009 rows=1.00 loops=2)
+                                 Filter: ((service_id = '41000000-0000-4000-8000-000000010001'::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid) AND (tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid))
+                                 Rows Removed by Filter: 96
+                                 Buffers: shared hit=2
+                     ->  Nested Loop (actual time=0.012..0.015 rows=15.00 loops=2)
+                           Buffers: shared hit=2
+                           ->  Seq Scan on scheduling_settings st (actual time=0.002..0.002 rows=1.00 loops=2)
+                                 Buffers: shared hit=2
+                           ->  Function Scan on generate_series g (actual time=0.010..0.010 rows=15.00 loops=2)
+               ->  Materialize (actual time=0.002..0.003 rows=6.13 loops=30)
+                     Storage: Memory  Maximum Storage: 17kB
+                     Buffers: shared hit=13
+                     ->  Index Only Scan using appointments_active_professional_start_idx on appointments a (actual time=0.058..0.067 rows=8.00 loops=1)
+                           Index Cond: ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid) AND (starts_at >= (InitPlan 1).col1) AND (starts_at < (InitPlan 2).col1))
+                           Heap Fetches: 8
+                           Index Searches: 1
+                           Buffers: shared hit=13
+         ->  Materialize (actual time=0.003..0.003 rows=2.00 loops=15)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=2
+               ->  Index Only Scan using calendar_blocks_active_period_idx on calendar_blocks cb (actual time=0.039..0.040 rows=2.00 loops=1)
+                     Index Cond: ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid))
+                     Heap Fetches: 2
+                     Index Searches: 1
+                     Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=924
+ Planning Time: 2.894 ms
+ Execution Time: 0.601 ms
+(83 rows)
+
+                                                                                                                        QUERY PLAN                                                                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual time=0.065..0.066 rows=1.00 loops=1)
+   Buffers: shared hit=13
+   InitPlan 1
+     ->  Seq Scan on tenants t (actual time=0.014..0.025 rows=1.00 loops=1)
+           Filter: (id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)
+           Rows Removed by Filter: 28
+           Buffers: shared hit=1
+   InitPlan 2
+     ->  Seq Scan on tenants t_1 (actual time=0.003..0.013 rows=1.00 loops=1)
+           Filter: (id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid)
+           Rows Removed by Filter: 28
+           Buffers: shared hit=1
+   ->  Index Only Scan using appointments_active_professional_start_idx on appointments a (actual time=0.054..0.062 rows=8.00 loops=1)
+         Index Cond: ((tenant_id = (NULLIF(current_setting('app.tenant_id'::text, true), ''::text))::uuid) AND (professional_id = '42000000-0000-4000-8000-000000010001'::uuid) AND (starts_at >= (InitPlan 1).col1) AND (starts_at < (InitPlan 2).col1))
+         Heap Fetches: 8
+         Index Searches: 1
+         Buffers: shared hit=13
+ Planning Time: 0.384 ms
+ Execution Time: 0.092 ms
+(19 rows)
+
+ROLLBACK

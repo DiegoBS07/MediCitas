@@ -13,3 +13,6 @@ tests
 **/tests
 **/migrations
 **/seed
+# Demo and measurement tools run from the host, not inside any image.
+demo
+metrics

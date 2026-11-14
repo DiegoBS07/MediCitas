@@ -9,7 +9,7 @@
 //                       restarted again with the configured value.
 //
 // Read-only for business data (only RF7/RF8 queries on the seeded clinic 1). Never prints tokens.
-//   node scripts/bench-availability.mjs [--requests 300] [--concurrency 10] [--skip-before]
+//   node metrics/bench-availability.mjs [--requests 300] [--concurrency 10] [--skip-before]
 //   npm run bench:cache
 // =============================================================================
 import { execFileSync } from 'node:child_process';
@@ -23,7 +23,7 @@ const arg = (name, fallback) => {
 const REQUESTS = Number(arg('requests', '300'));
 const CONCURRENCY = Number(arg('concurrency', '10'));
 const SKIP_BEFORE = process.argv.includes('--skip-before');
-const OUT = arg('out', 'docs/data/evidence/availability-cache-benchmark.json');
+const OUT = arg('out', 'metrics/results/availability-cache-benchmark.json');
 const GATEWAY = `http://127.0.0.1:${process.env.GATEWAY_HOST_PORT ?? '8000'}`;
 const TZ = 'America/Costa_Rica';
 

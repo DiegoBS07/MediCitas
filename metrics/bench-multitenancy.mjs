@@ -16,7 +16,7 @@
 // left in the database. It connects as the PostgreSQL superuser of the local stack (from .env) only to
 // switch roles with SET LOCAL ROLE and to disable the booking validation trigger for the bulk load.
 //
-//   node database/tools/bench-multitenancy.mjs [--runs 60] [--out docs/data/evidence/multitenancy-benchmark.json]
+//   node metrics/bench-multitenancy.mjs [--runs 60] [--out metrics/results/multitenancy-benchmark.json]
 // =============================================================================
 import { existsSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
@@ -28,7 +28,7 @@ const arg = (name, fallback) => {
 };
 const RUNS = Number(arg('runs', '60'));
 const WARMUP = 5;
-const OUT = arg('out', 'docs/data/evidence/multitenancy-benchmark.json');
+const OUT = arg('out', 'metrics/results/multitenancy-benchmark.json');
 
 const TENANT = '10000000-0000-4000-8000-000000000001';
 const OTHER_TENANTS = ['10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000003'];

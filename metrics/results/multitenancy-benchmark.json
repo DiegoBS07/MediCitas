@@ -1,0 +1,507 @@
+{
+  "generatedAt": "2026-11-13T05:07:30.321Z",
+  "postgres": "18.6 (Debian 18.6-1.pgdg13+2)",
+  "jit": "off",
+  "runsPerMode": 100,
+  "warmup": 5,
+  "reports": [
+    {
+      "dataset": "seed",
+      "sizes": {
+        "appointments": 2678,
+        "audit_rows": 789,
+        "appointments_tenant": 939,
+        "audit_tenant": 295
+      },
+      "context": {
+        "day": "2026-11-16",
+        "patient": "50000000-0000-4000-8000-000100000022",
+        "auditPatient": "50000000-0000-4000-8000-000100000001"
+      },
+      "results": [
+        {
+          "query": "RF7",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 10,
+          "executionMedianMs": 0.257,
+          "executionP95Ms": 0.322,
+          "planningMedianMs": 1.171,
+          "sharedHitBlocks": 26,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF7",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 10,
+          "executionMedianMs": 0.256,
+          "executionP95Ms": 0.346,
+          "planningMedianMs": 1.743,
+          "sharedHitBlocks": 26,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF7",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 10,
+          "executionMedianMs": 0.247,
+          "executionP95Ms": 0.335,
+          "planningMedianMs": 1.763,
+          "sharedHitBlocks": 26,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 13,
+          "executionMedianMs": 0.025,
+          "executionP95Ms": 0.05,
+          "planningMedianMs": 0.056,
+          "sharedHitBlocks": 16,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 13,
+          "executionMedianMs": 0.027,
+          "executionP95Ms": 0.036,
+          "planningMedianMs": 0.082,
+          "sharedHitBlocks": 16,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 13,
+          "executionMedianMs": 0.03,
+          "executionP95Ms": 0.055,
+          "planningMedianMs": 0.081,
+          "sharedHitBlocks": 16,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 41,
+          "executionMedianMs": 0.148,
+          "executionP95Ms": 0.224,
+          "planningMedianMs": 0.231,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 41,
+          "executionMedianMs": 0.209,
+          "executionP95Ms": 0.325,
+          "planningMedianMs": 0.291,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 41,
+          "executionMedianMs": 0.151,
+          "executionP95Ms": 0.197,
+          "planningMedianMs": 0.255,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 5,
+          "executionMedianMs": 0.442,
+          "executionP95Ms": 0.534,
+          "planningMedianMs": 0.098,
+          "sharedHitBlocks": 81,
+          "indexes": [],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 5,
+          "executionMedianMs": 1.093,
+          "executionP95Ms": 1.239,
+          "planningMedianMs": 0.121,
+          "sharedHitBlocks": 81,
+          "indexes": [],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 5,
+          "executionMedianMs": 0.483,
+          "executionP95Ms": 0.587,
+          "planningMedianMs": 0.115,
+          "sharedHitBlocks": 81,
+          "indexes": [],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 10,
+          "executionMedianMs": 0.032,
+          "executionP95Ms": 0.047,
+          "planningMedianMs": 0.053,
+          "sharedHitBlocks": 10,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "B",
+          "role": "sch_clinic_admin",
+          "rows": 10,
+          "executionMedianMs": 0.035,
+          "executionP95Ms": 0.045,
+          "planningMedianMs": 0.078,
+          "sharedHitBlocks": 10,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "C",
+          "role": "sch_clinic_admin",
+          "rows": 10,
+          "executionMedianMs": 0.037,
+          "executionP95Ms": 0.055,
+          "planningMedianMs": 0.073,
+          "sharedHitBlocks": 10,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        }
+      ],
+      "leaks": {
+        "discriminatorOnlyForgotPredicate": {
+          "n": 2678,
+          "tenants": 20
+        },
+        "rlsForgotPredicate": {
+          "n": 939,
+          "tenants": 1
+        },
+        "rlsAbsentContext": {
+          "n": 0,
+          "tenants": 0
+        },
+        "rlsMalformedContext": {
+          "error": "22P02"
+        },
+        "rlsExplicitForeignTenant": {
+          "n": 0
+        }
+      }
+    },
+    {
+      "dataset": "seed + synthetic history",
+      "sizes": {
+        "appointments": 62725,
+        "audit_rows": 60789,
+        "appointments_tenant": 20954,
+        "audit_tenant": 20295
+      },
+      "context": {
+        "day": "2026-11-16",
+        "patient": "01555aea-1c1d-ab74-aaef-78d65335fcbe",
+        "auditPatient": "0091f7f5-7403-c039-0244-4ebd4bd5f44a"
+      },
+      "results": [
+        {
+          "query": "RF7",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 10,
+          "executionMedianMs": 0.221,
+          "executionP95Ms": 0.281,
+          "planningMedianMs": 1.161,
+          "sharedHitBlocks": 27,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF7",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 10,
+          "executionMedianMs": 0.242,
+          "executionP95Ms": 0.326,
+          "planningMedianMs": 1.697,
+          "sharedHitBlocks": 27,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF7",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 10,
+          "executionMedianMs": 0.267,
+          "executionP95Ms": 0.33,
+          "planningMedianMs": 1.726,
+          "sharedHitBlocks": 27,
+          "indexes": [
+            "appointments_active_professional_start_idx",
+            "calendar_blocks_active_period_idx",
+            "weekly_schedule_blocks_no_overlap"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 20,
+          "executionMedianMs": 0.036,
+          "executionP95Ms": 0.058,
+          "planningMedianMs": 0.065,
+          "sharedHitBlocks": 23,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 20,
+          "executionMedianMs": 0.031,
+          "executionP95Ms": 0.043,
+          "planningMedianMs": 0.081,
+          "sharedHitBlocks": 23,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF16",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 20,
+          "executionMedianMs": 0.034,
+          "executionP95Ms": 0.043,
+          "planningMedianMs": 0.079,
+          "sharedHitBlocks": 23,
+          "indexes": [
+            "appointments_patient_history_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 41,
+          "executionMedianMs": 0.141,
+          "executionP95Ms": 0.171,
+          "planningMedianMs": 0.23,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 41,
+          "executionMedianMs": 0.205,
+          "executionP95Ms": 0.264,
+          "planningMedianMs": 0.3,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF20",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 41,
+          "executionMedianMs": 0.155,
+          "executionP95Ms": 0.192,
+          "planningMedianMs": 0.272,
+          "sharedHitBlocks": 55,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 5,
+          "executionMedianMs": 2.374,
+          "executionP95Ms": 2.574,
+          "planningMedianMs": 0.132,
+          "sharedHitBlocks": 441,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "B",
+          "role": "sch_receptionist",
+          "rows": 5,
+          "executionMedianMs": 2.183,
+          "executionP95Ms": 2.328,
+          "planningMedianMs": 0.128,
+          "sharedHitBlocks": 441,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF21",
+          "mode": "C",
+          "role": "sch_receptionist",
+          "rows": 5,
+          "executionMedianMs": 2.66,
+          "executionP95Ms": 2.829,
+          "planningMedianMs": 0.139,
+          "sharedHitBlocks": 441,
+          "indexes": [
+            "appointments_tenant_start_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "A",
+          "role": "sch_bench_norls",
+          "rows": 14,
+          "executionMedianMs": 0.023,
+          "executionP95Ms": 0.037,
+          "planningMedianMs": 0.045,
+          "sharedHitBlocks": 17,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "B",
+          "role": "sch_clinic_admin",
+          "rows": 14,
+          "executionMedianMs": 0.036,
+          "executionP95Ms": 0.06,
+          "planningMedianMs": 0.085,
+          "sharedHitBlocks": 17,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        },
+        {
+          "query": "RF19",
+          "mode": "C",
+          "role": "sch_clinic_admin",
+          "rows": 14,
+          "executionMedianMs": 0.037,
+          "executionP95Ms": 0.066,
+          "planningMedianMs": 0.08,
+          "sharedHitBlocks": 17,
+          "indexes": [
+            "audit_log_tenant_patient_idx"
+          ],
+          "policyInPlan": false
+        }
+      ],
+      "leaks": {
+        "discriminatorOnlyForgotPredicate": {
+          "n": 62725,
+          "tenants": 20
+        },
+        "rlsForgotPredicate": {
+          "n": 20954,
+          "tenants": 1
+        },
+        "rlsAbsentContext": {
+          "n": 0,
+          "tenants": 0
+        },
+        "rlsMalformedContext": {
+          "error": "22P02"
+        },
+        "rlsExplicitForeignTenant": {
+          "n": 0
+        }
+      }
+    }
+  ]
+}

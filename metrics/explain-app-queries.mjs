@@ -5,13 +5,13 @@
 // set_config, so discriminator + RLS — with the seed and with synthetic history (~20,000 appointments,
 // ~20,000 audit rows and ~20,000 patients per seeded clinic). Everything is ROLLED BACK.
 //
-//   node database/tools/explain-app-queries.mjs [--out docs/data/evidence/explain-app-queries.txt]
+//   node metrics/explain-app-queries.mjs [--out metrics/results/explain-app-queries.txt]
 // =============================================================================
 import { existsSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
-const OUT = process.argv.includes('--out') ? process.argv[process.argv.indexOf('--out') + 1] : 'docs/data/evidence/explain-app-queries.txt';
+const OUT = process.argv.includes('--out') ? process.argv[process.argv.indexOf('--out') + 1] : 'metrics/results/explain-app-queries.txt';
 
 const TENANT = '10000000-0000-4000-8000-000000000001';
 const PROFESSIONAL = '42000000-0000-4000-8000-000000010001';
