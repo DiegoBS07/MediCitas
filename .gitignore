@@ -37,5 +37,12 @@ desktop.ini
 *.excalidraw.bak
 
 # docs
-docs/
+docs/contracts/
+docs/operations/
+docs/description/
+docs/testing/
+docs/defense/
+docs/architecture/adr
+docs/architecture/architecture-overview.md
+docs/architecture/decision-log.md
 
