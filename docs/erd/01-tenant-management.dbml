@@ -1,0 +1,23 @@
+// tenant-management: database medicitas_tenant, schema tenancy (control plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_tenant {
+  database_type: 'PostgreSQL'
+  Note: 'Source of truth for the clinics (tenants) of the SaaS (RF1). No Row-Level Security: it is a control-plane table.'
+}
+
+Table tenants {
+  id uuid [pk, note: 'Tenant UUID; emitted as the tenant_id claim by Keycloak and used as tenant_id in every application database']
+  slug text [not null, unique, note: 'Human-readable unique identifier of the clinic']
+  name text [not null, note: 'Clinic display name (2..120 characters)']
+  timezone text [not null, note: 'IANA timezone of the clinic']
+  status text [not null, default: 'provisioning', note: 'provisioning | active | onboarding_failed']
+  failure_reason_code text [note: 'Required when status = onboarding_failed']
+  onboarding_saga_id uuid [not null, unique, note: 'Onboarding saga that created the tenant (medicitas_onboarding.saga_instances.id, logical reference)']
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  activated_at timestamptz [note: 'Required when status = active']
+
+  Note: 'Clinics (tenants) of the SaaS. Replicated to the application databases through the TenantOnboarded event.'
+}

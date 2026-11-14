@@ -1,0 +1,49 @@
+// onboarding-orchestrator: database medicitas_onboarding, schema onboarding (control plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_onboarding {
+  database_type: 'PostgreSQL'
+  Note: 'State of the clinic onboarding saga (RF1). No Row-Level Security: control-plane tables.'
+}
+
+Table saga_instances {
+  id uuid [pk, note: 'Saga identifier; also the public operationId']
+  saga_type text [not null, default: 'tenant-onboarding']
+  tenant_id uuid [note: 'Tenant created by the saga (medicitas_tenant.tenants.id, logical reference); known after TenantCreatedReply']
+  status text [not null, default: 'started', note: 'started > tenant_created > identity_provisioned > activating > completed | compensating > failed']
+  request jsonb [not null, note: 'Minimized request snapshot; never contains a password']
+  result jsonb
+  error_code text [note: 'Required when status = failed']
+  error_detail text
+  actor_subject uuid [not null, note: 'Keycloak subject of the platform admin who started the saga']
+  correlation_id uuid [not null]
+  deadline_at timestamptz [not null, note: 'After this instant the sweeper compensates a non-terminal saga']
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  completed_at timestamptz
+
+  Indexes {
+    deadline_at [name: 'saga_instances_open_deadline_idx', note: 'Partial: non-terminal sagas only']
+  }
+}
+
+Table saga_steps {
+  saga_id uuid [not null]
+  step_name text [not null, note: 'create_tenant | keycloak_group | keycloak_admin_user | activate_tenant | mark_tenant_failed | delete_keycloak_user | delete_keycloak_group']
+  status text [not null, default: 'pending', note: 'pending | dispatched | succeeded | rejected | failed | compensating | compensated | skipped']
+  command_message_id uuid [note: 'messageId of the command, re-sent with the same id']
+  attempts integer [not null, default: 0]
+  last_attempt_at timestamptz
+  next_attempt_at timestamptz
+  result jsonb [note: 'Reply result or Keycloak artifact ids used by compensation']
+  error_code text
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (saga_id, step_name) [pk]
+  }
+}
+
+Ref: saga_steps.saga_id > saga_instances.id

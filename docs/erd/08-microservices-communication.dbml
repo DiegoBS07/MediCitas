@@ -1,0 +1,200 @@
+// Microservices and their communications.
+// This is not a database schema: each table is a runtime component and each column is one of its
+// communication ports (HTTP API, queue it consumes, publisher, owned database, external client).
+// Each relationship line goes from the sending port to the receiving port.
+
+Project medicitas_microservices {
+  database_type: 'PostgreSQL'
+  Note: '''
+  Components of MediCitas and how they talk to each other.
+  * HTTP: the client only talks to the api-gateway, which validates the token and forwards to the owning service.
+  * RabbitMQ (vhost medicitas): every service-to-service message goes through the broker, never by direct HTTP.
+    Commands (exchange medicitas.commands) are answered on medicitas.replies, routed to the requesting orchestrator;
+    the query uses direct reply-to; domain events go to medicitas.domain-events.
+    Outbox and inbox tables make sending and consuming transactional; failures go to retry queues and then to medicitas.dead-letter.
+  * PostgreSQL: one database per service, reachable only by that service (column "database").
+  * Keycloak: issues the tokens; the gateway and every service validate them with the realm JWKS
+    (only the gateway line is drawn to keep the diagram readable). The two user-provisioning orchestrators use the admin API.
+  * Redis: availability cache of scheduler-management only.
+  '''
+}
+
+TableGroup edge [color: #6C757D] {
+  client
+  api_gateway
+}
+
+TableGroup control_plane [color: #8E44AD] {
+  onboarding_orchestrator
+  tenant_management
+}
+
+TableGroup application_plane [color: #2E86C1] {
+  user_management_orchestrator
+  user_management
+  catalog_service_management
+  appointment_orchestrator
+  scheduler_management
+}
+
+TableGroup shared_plane [color: #27AE60] {
+  keycloak
+  redis
+}
+
+// ---------------------------------------------------------------- edge
+
+Table client [headercolor: #6C757D] {
+  http_requests https [note: 'Bearer token issued by Keycloak; never issued by MediCitas']
+
+  Note: 'Any API consumer (demo script, tests, .http collection).'
+}
+
+Table api_gateway [headercolor: #6C757D] {
+  public_api http [note: 'Only public entry point, /api/v1 (47 routes). Serves GET /me itself']
+  token_validation jwks [note: 'Validates signature, issuer, audience and expiry; takes tenant_id from the token']
+  route_tenant_management http
+  route_onboarding_orchestrator http
+  route_user_management http
+  route_user_management_orchestrator http
+  route_catalog_service_management http
+  route_scheduler_management http
+  route_appointment_orchestrator http
+
+  Note: 'Routes each request to the owning service. Holds no database.'
+}
+
+// ---------------------------------------------------------------- control plane
+
+Table onboarding_orchestrator [headercolor: #8E44AD] {
+  http_api http [note: 'POST /tenants, GET /tenant-onboardings/{operationId}']
+  database postgres [note: 'medicitas_onboarding (schema onboarding)']
+  commands_to_tenant_management amqp [note: 'CreateTenantCommand, ActivateTenantCommand, MarkTenantOnboardingFailedCommand']
+  replies_queue amqp [note: 'onboarding-orchestrator.replies: replies of tenant-management']
+  keycloak_admin https [note: 'Creates the clinic group and the first admin user; deletes them when compensating']
+
+  Note: 'Clinic onboarding saga (RF1).'
+}
+
+Table tenant_management [headercolor: #8E44AD] {
+  http_api http [note: 'GET /tenants, GET /tenants/{tenantId}']
+  database postgres [note: 'medicitas_tenant (schema tenancy)']
+  commands_queue amqp [note: 'tenant-management.commands; replies go to onboarding-orchestrator.replies']
+  events_out amqp [note: 'TenantOnboarded (consumed by user-management, catalog, scheduler); TenantOnboardingFailed (no consumer)']
+
+  Note: 'Source of truth for the clinics (tenants).'
+}
+
+// ---------------------------------------------------------------- application plane
+
+Table user_management_orchestrator [headercolor: #2E86C1] {
+  http_api http [note: 'POST /users, PATCH /users/{userId}/role, POST /users/{userId}/deactivate, GET /user-operations/{operationId}']
+  database postgres [note: 'medicitas_user_orchestrator (schema provisioning)']
+  commands_to_user_management amqp [note: 'ReserveUserCommand, ActivateUserCommand, CancelUserReservationCommand, ChangeUserRoleCommand, DeactivateUserCommand']
+  replies_queue amqp [note: 'user-management-orchestrator.replies: replies of user-management']
+  keycloak_admin https [note: 'Creates the user, assigns or restores the role, disables or deletes the user']
+
+  Note: 'User provisioning sagas (RF2): creation, role change, deactivation.'
+}
+
+Table user_management [headercolor: #2E86C1] {
+  http_api http [note: 'GET /users, GET /users/{userId}, POST /patients, GET /patients, GET /patients/{patientId}, PATCH /patients/{patientId}']
+  database postgres [note: 'medicitas_user (schema identity)']
+  commands_queue amqp [note: 'user-management.commands: user commands from user-management-orchestrator, EnsurePatientCommand from appointment-orchestrator']
+  queries_queue amqp [note: 'user-management.queries: GetTenantUserQuery, answered by direct reply-to']
+  replicas_queue amqp [note: 'user-management.events.replicas: TenantOnboarded']
+  events_out amqp [note: 'TenantUserDeactivated (catalog), PatientContactAccessed (scheduler audit); TenantUserActivated, TenantUserRoleChanged, PatientRegistered, PatientUpdated (no consumer)']
+
+  Note: 'Clinic users (RF2), roles and permissions (RF17), patients (RF14).'
+}
+
+Table catalog_service_management [headercolor: #2E86C1] {
+  http_api http [note: 'Specialties, services and professionals: routes 12 to 23']
+  database postgres [note: 'medicitas_catalog (schema catalog)']
+  commands_queue amqp [note: 'catalog-service-management.commands: ValidateBookingCatalogCommand; reply to appointment-orchestrator.replies']
+  replicas_queue amqp [note: 'catalog-service-management.events.replicas: TenantOnboarded, TenantUserDeactivated']
+  query_to_user_management amqp [note: 'GetTenantUserQuery when registering a professional (3 s timeout, then HTTP 503)']
+  events_out amqp [note: 'ServiceCreated/Updated/Deactivated, ProfessionalRegistered/Updated, ProfessionalServicesChanged (scheduler); SpecialtyCreated (no consumer)']
+
+  Note: 'Specialties, services (RF3) and professionals (RF4).'
+}
+
+Table appointment_orchestrator [headercolor: #2E86C1] {
+  http_api http [note: 'POST /appointments, GET /appointment-operations/{operationId}']
+  database postgres [note: 'medicitas_appointment_orchestrator (schema booking)']
+  commands_to_user_management amqp [note: 'EnsurePatientCommand (in parallel)']
+  commands_to_catalog amqp [note: 'ValidateBookingCatalogCommand (in parallel)']
+  commands_to_scheduler amqp [note: 'HoldSlotCommand (in parallel), then ConfirmAppointmentCommand or ReleaseSlotCommand']
+  replies_queue amqp [note: 'appointment-orchestrator.replies: replies of user-management, catalog and scheduler']
+  events_out amqp [note: 'AppointmentBookingFailed (no consumer)']
+
+  Note: 'Booking saga (RF9) with explicit compensation.'
+}
+
+Table scheduler_management [headercolor: #2E86C1] {
+  http_api http [note: 'Schedules, blocks, conflicts, availability, appointments, clinical notes, patient history, agenda, reports, audit log']
+  database postgres [note: 'medicitas_scheduler (schema scheduling); owner of the appointment aggregate']
+  cache redis [note: 'Availability cache, read-through, keys versioned per professional and date']
+  commands_queue amqp [note: 'scheduler-management.commands: HoldSlotCommand, ConfirmAppointmentCommand, ReleaseSlotCommand; reply to appointment-orchestrator.replies']
+  replicas_queue amqp [note: 'scheduler-management.events.replicas: TenantOnboarded, catalog.service.*, catalog.professional.*']
+  audit_queue amqp [note: 'scheduler-management.events.audit: PatientContactAccessed']
+  cache_invalidation_queue amqp [note: 'scheduler-management.events.cache-invalidation: AvailabilityChanged']
+  events_out amqp [note: 'AvailabilityChanged (itself, cache invalidation); ProfessionalScheduleDefined, CalendarBlockCreated/Removed, AppointmentCreated/Rescheduled/Cancelled/OutcomeRecorded, ClinicalNoteAdded (no consumer)']
+
+  Note: 'Agendas, availability, appointments, clinical notes and audit (RF5 to RF7, RF10 to RF13, RF15, RF16, RF18 to RF21).'
+}
+
+// ---------------------------------------------------------------- shared plane
+
+Table keycloak [headercolor: #27AE60] {
+  jwks https [note: 'Realm public keys used to validate tokens (gateway and every service)']
+  admin_api https [note: 'Admin REST API, client medicitas-provisioner (client credentials)']
+
+  Note: 'Identity provider: realm medicitas, tenant_id claim, realm roles.'
+}
+
+Table redis [headercolor: #27AE60] {
+  availability_cache redis [note: 'ACL user scheduler; TTL plus version-based invalidation']
+
+  Note: 'Cache only; the system keeps working (from PostgreSQL) when Redis is down.'
+}
+
+// ---------------------------------------------------------------- HTTP
+
+Ref client_to_gateway: client.http_requests > api_gateway.public_api [color: #6C757D]
+Ref: api_gateway.route_tenant_management > tenant_management.http_api [color: #6C757D]
+Ref: api_gateway.route_onboarding_orchestrator > onboarding_orchestrator.http_api [color: #6C757D]
+Ref: api_gateway.route_user_management > user_management.http_api [color: #6C757D]
+Ref: api_gateway.route_user_management_orchestrator > user_management_orchestrator.http_api [color: #6C757D]
+Ref: api_gateway.route_catalog_service_management > catalog_service_management.http_api [color: #6C757D]
+Ref: api_gateway.route_scheduler_management > scheduler_management.http_api [color: #6C757D]
+Ref: api_gateway.route_appointment_orchestrator > appointment_orchestrator.http_api [color: #6C757D]
+
+// ---------------------------------------------------------------- RabbitMQ commands (reply returns on medicitas.replies)
+
+Ref: onboarding_orchestrator.commands_to_tenant_management > tenant_management.commands_queue [color: #E67E22]
+Ref: user_management_orchestrator.commands_to_user_management > user_management.commands_queue [color: #E67E22]
+Ref: appointment_orchestrator.commands_to_user_management > user_management.commands_queue [color: #E67E22]
+Ref: appointment_orchestrator.commands_to_catalog > catalog_service_management.commands_queue [color: #E67E22]
+Ref: appointment_orchestrator.commands_to_scheduler > scheduler_management.commands_queue [color: #E67E22]
+
+// ---------------------------------------------------------------- RabbitMQ query (direct reply-to)
+
+Ref: catalog_service_management.query_to_user_management > user_management.queries_queue [color: #D4AC0D]
+
+// ---------------------------------------------------------------- RabbitMQ domain events
+
+Ref: tenant_management.events_out > user_management.replicas_queue [color: #2E86C1]
+Ref: tenant_management.events_out > catalog_service_management.replicas_queue [color: #2E86C1]
+Ref: tenant_management.events_out > scheduler_management.replicas_queue [color: #2E86C1]
+Ref: user_management.events_out > catalog_service_management.replicas_queue [color: #2E86C1]
+Ref: user_management.events_out > scheduler_management.audit_queue [color: #2E86C1]
+Ref: catalog_service_management.events_out > scheduler_management.replicas_queue [color: #2E86C1]
+Ref: scheduler_management.events_out > scheduler_management.cache_invalidation_queue [color: #2E86C1]
+
+// ---------------------------------------------------------------- shared plane
+
+Ref: api_gateway.token_validation > keycloak.jwks [color: #27AE60]
+Ref: onboarding_orchestrator.keycloak_admin > keycloak.admin_api [color: #27AE60]
+Ref: user_management_orchestrator.keycloak_admin > keycloak.admin_api [color: #27AE60]
+Ref: scheduler_management.cache > redis.availability_cache [color: #27AE60]

@@ -1,0 +1,53 @@
+// user-management-orchestrator: database medicitas_user_orchestrator, schema provisioning (application plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_user_orchestrator {
+  database_type: 'PostgreSQL'
+  Note: 'State of the user provisioning sagas (RF2): creation, role change, deactivation. Forced Row-Level Security by tenant_id.'
+}
+
+Table saga_instances {
+  id uuid [pk, note: 'Saga identifier; also the public operationId']
+  tenant_id uuid [not null]
+  saga_type text [not null, note: 'user-creation | user-role-change | user-deactivation']
+  target_user_id uuid [not null, note: 'medicitas_user.users.id (logical reference)']
+  status text [not null, default: 'started', note: 'started > reserved > identity_provisioned > activating > completed | compensating > failed']
+  request jsonb [not null, note: 'Minimized request snapshot; never contains a password']
+  result jsonb
+  error_code text [note: 'Required when status = failed']
+  error_detail text
+  actor_subject uuid [not null]
+  correlation_id uuid [not null]
+  deadline_at timestamptz [not null]
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  completed_at timestamptz
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, target_user_id) [unique, name: 'saga_instances_one_open_per_user', note: 'Partial: one open saga per user']
+    deadline_at [name: 'saga_instances_open_deadline_idx', note: 'Partial: non-terminal sagas only']
+  }
+}
+
+Table saga_steps {
+  tenant_id uuid [not null]
+  saga_id uuid [not null]
+  step_name text [not null, note: 'reserve_user | keycloak_user | keycloak_role | keycloak_disable | activate_user | change_role | deactivate_user | cancel_reservation | restore_keycloak_role | delete_keycloak_user']
+  status text [not null, default: 'pending', note: 'pending | dispatched | succeeded | rejected | failed | compensating | compensated | skipped']
+  command_message_id uuid
+  attempts integer [not null, default: 0]
+  last_attempt_at timestamptz
+  next_attempt_at timestamptz
+  result jsonb
+  error_code text
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (saga_id, step_name) [pk]
+  }
+}
+
+Ref: saga_steps.(tenant_id, saga_id) > saga_instances.(tenant_id, id)

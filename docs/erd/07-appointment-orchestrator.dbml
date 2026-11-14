@@ -1,0 +1,60 @@
+// appointment-orchestrator: database medicitas_appointment_orchestrator, schema booking (application plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_appointment_orchestrator {
+  database_type: 'PostgreSQL'
+  Note: 'State of the booking saga (RF9): patient, catalog and slot run in parallel; confirm or release follow. Forced Row-Level Security by tenant_id.'
+}
+
+Table saga_instances {
+  id uuid [pk, note: 'Saga identifier; also the public operationId']
+  tenant_id uuid [not null]
+  saga_type text [not null, default: 'appointment-booking']
+  appointment_id uuid [not null, note: 'Pre-generated id; medicitas_scheduler.appointments.id (logical reference)']
+  patient_id uuid [not null, note: 'Existing or pre-generated id; medicitas_user.patients.id (logical reference)']
+  professional_id uuid [not null, note: 'medicitas_catalog.professionals.id (logical reference)']
+  service_id uuid [not null, note: 'medicitas_catalog.services.id (logical reference)']
+  start_at timestamptz [not null, note: 'Requested start; the end is derived from the service duration (I4)']
+  patient_mode text [not null, note: 'existing | create']
+  status text [not null, default: 'started', note: 'started > awaiting_participants > confirming > completed | compensating > failed']
+  result jsonb
+  error_code text [note: 'Required when status = failed']
+  error_detail text
+  actor_subject uuid [not null]
+  actor_role text [not null, note: 'clinic_admin | receptionist']
+  correlation_id uuid [not null]
+  deadline_at timestamptz [not null, note: 'After this instant the saga compensates']
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  completed_at timestamptz
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, appointment_id) [unique]
+    deadline_at [name: 'saga_instances_open_deadline_idx', note: 'Partial: non-terminal sagas only']
+  }
+
+  Note: 'Booking sagas. New-patient personal data is not stored here.'
+}
+
+Table saga_steps {
+  tenant_id uuid [not null]
+  saga_id uuid [not null]
+  step_name text [not null, note: 'patient | catalog | slot | confirm | release']
+  status text [not null, default: 'pending', note: 'pending | dispatched | succeeded | rejected | failed | compensating | compensated | skipped']
+  command_message_id uuid [note: 'Outbox id of the command, re-sent unchanged by the sweeper']
+  attempts integer [not null, default: 0]
+  last_attempt_at timestamptz
+  next_attempt_at timestamptz
+  result jsonb
+  error_code text
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (saga_id, step_name) [pk]
+  }
+}
+
+Ref: saga_steps.(tenant_id, saga_id) > saga_instances.(tenant_id, id)

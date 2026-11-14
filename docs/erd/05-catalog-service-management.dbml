@@ -1,0 +1,97 @@
+// catalog-service-management: database medicitas_catalog, schema catalog (application plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_catalog {
+  database_type: 'PostgreSQL'
+  Note: 'Specialties, services (RF3) and professionals (RF4). Every table carries tenant_id, composite foreign keys and forced Row-Level Security.'
+}
+
+Table tenants {
+  id uuid [pk]
+  slug text [not null]
+  name text [not null]
+  timezone text [not null]
+  status text [not null, note: 'Always active']
+  version integer [not null]
+  replicated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Note: 'Read replica of control-plane tenants (TenantOnboarded). Foreign key target for tenant_id.'
+}
+
+Table specialties {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  name text [not null]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, `lower(name)`) [unique, name: 'specialties_name_unique']
+  }
+
+  Note: 'Medical specialties of a clinic.'
+}
+
+Table services {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  specialty_id uuid [not null, note: 'Specialty required to perform the service (immutable)']
+  name text [not null]
+  duration_minutes integer [not null, note: '5..480, multiple of 5; defines the slot length (I4)']
+  status text [not null, default: 'active', note: 'active | inactive']
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, `lower(name)`) [unique, name: 'services_name_unique']
+  }
+
+  Note: 'Service catalog (RF3).'
+}
+
+Table professionals {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  user_id uuid [not null, note: 'medicitas_user.users.id (logical reference)']
+  keycloak_subject uuid [not null, unique, note: 'Copy of the Keycloak subject of the user']
+  specialty_id uuid [not null]
+  display_name text [not null]
+  license_number text [not null]
+  status text [not null, default: 'active', note: 'active | inactive']
+  version integer [not null, default: 1]
+  services_version integer [not null, default: 1, note: 'Version of the associated service set']
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, user_id) [unique]
+    (tenant_id, license_number) [unique]
+  }
+
+  Note: 'Health professionals (RF4): practice profile of a user with role health_professional.'
+}
+
+Table professional_services {
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  service_id uuid [not null]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, professional_id, service_id) [pk]
+    (tenant_id, service_id) [name: 'professional_services_service_idx']
+  }
+
+  Note: 'Services a professional is enabled to perform (only services of the professional specialty).'
+}
+
+Ref: specialties.tenant_id > tenants.id
+Ref: services.tenant_id > tenants.id
+Ref: professionals.tenant_id > tenants.id
+Ref: services.(tenant_id, specialty_id) > specialties.(tenant_id, id)
+Ref: professionals.(tenant_id, specialty_id) > specialties.(tenant_id, id)
+Ref: professional_services.(tenant_id, professional_id) > professionals.(tenant_id, id)
+Ref: professional_services.(tenant_id, service_id) > services.(tenant_id, id)

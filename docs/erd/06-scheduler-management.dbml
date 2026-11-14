@@ -1,0 +1,265 @@
+// scheduler-management: database medicitas_scheduler, schema scheduling (application plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_scheduler {
+  database_type: 'PostgreSQL'
+  Note: '''
+  Scheduling core: replicas of tenants and catalog, professional agendas (RF5, RF6), availability versions (RF7, I8),
+  appointments (RF9 to RF13, I1 to I4, I7), clinical notes (RF15) and the audit log (RF18, I6).
+  Every tenant table carries tenant_id, composite foreign keys and forced Row-Level Security.
+  '''
+}
+
+TableGroup replicas {
+  tenants
+  catalog_services
+  catalog_professionals
+  catalog_professional_services
+}
+
+TableGroup agenda {
+  professional_agendas
+  weekly_schedule_blocks
+  calendar_blocks
+  availability_versions
+  scheduling_settings
+}
+
+TableGroup appointments_and_audit {
+  appointments
+  clinical_notes
+  audit_log
+}
+
+// ---------------------------------------------------------------- replicas
+
+Table tenants {
+  id uuid [pk]
+  slug text [not null]
+  name text [not null]
+  timezone text [not null, note: 'IANA timezone used for weekly schedules and local dates']
+  status text [not null, note: 'Always active']
+  version integer [not null]
+  replicated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Note: 'Replica of control-plane tenants (TenantOnboarded).'
+}
+
+Table catalog_services {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  specialty_id uuid [not null]
+  name text [not null]
+  duration_minutes integer [not null, note: 'Slot length (I4)']
+  status text [not null, note: 'active | inactive']
+  version integer [not null]
+  replicated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+  }
+
+  Note: 'Replica of catalog services (Service* events).'
+}
+
+Table catalog_professionals {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  user_id uuid [not null]
+  keycloak_subject uuid [not null, unique, note: 'Resolves the "own" rules (own agenda, own notes)']
+  display_name text [not null]
+  specialty_id uuid [not null]
+  status text [not null, note: 'active | inactive']
+  version integer [not null]
+  services_version integer [not null]
+  replicated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+  }
+
+  Note: 'Replica of catalog professionals (Professional* events).'
+}
+
+Table catalog_professional_services {
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  service_id uuid [not null]
+
+  Indexes {
+    (tenant_id, professional_id, service_id) [pk]
+    (tenant_id, service_id) [name: 'catalog_professional_services_service_idx']
+  }
+
+  Note: 'Replica of the professional-service association set.'
+}
+
+// ---------------------------------------------------------------- agenda
+
+Table professional_agendas {
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  schedule_version bigint [not null, default: 0, note: 'Part of the availability cache key']
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, professional_id) [pk]
+  }
+
+  Note: 'Lock anchor of a professional agenda: bookings take FOR SHARE, schedule and block writers take FOR UPDATE.'
+}
+
+Table weekly_schedule_blocks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  day_of_week smallint [not null, note: 'ISO weekday: 1 = Monday ... 7 = Sunday']
+  start_time time [not null, note: 'Local start time (inclusive)']
+  end_time time [not null, note: 'Local end time (exclusive); 24:00 allowed']
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Note: 'Weekly working hours (RF5); several blocks per day allowed. GiST exclusion constraint: blocks of the same day never overlap.'
+}
+
+Table calendar_blocks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  period tstzrange [not null, note: 'Blocked interval [start, end), at most 90 days']
+  reason text [not null, note: 'vacation | leave | other']
+  note text
+  status text [not null, default: 'active', note: 'active | removed']
+  created_by_subject uuid [not null]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  removed_by_subject uuid
+  removed_at timestamptz
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, professional_id, period) [type: gist, name: 'calendar_blocks_active_period_idx', note: 'Partial: active blocks only']
+  }
+
+  Note: 'Vacation or leave blocks (RF6). They remove availability but never cancel booked appointments.'
+}
+
+Table availability_versions {
+  tenant_id uuid [not null]
+  professional_id uuid [not null]
+  local_date date [not null]
+  version bigint [not null, default: 1]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, professional_id, local_date) [pk]
+  }
+
+  Note: 'Monotonic version per professional and local date, bumped in the same transaction as any availability change. Part of the Redis key (I8).'
+}
+
+Table scheduling_settings {
+  singleton boolean [pk, default: true]
+  slot_step_minutes integer [not null, default: 15]
+  booking_horizon_days integer [not null, default: 180]
+  hold_ttl_seconds integer [not null, default: 60]
+
+  Note: 'Single-row scheduling parameters. No relationships.'
+}
+
+// ---------------------------------------------------------------- appointments and audit
+
+Table appointments {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  patient_id uuid [not null, note: 'medicitas_user.patients.id (logical reference validated by the booking saga)']
+  professional_id uuid [not null]
+  service_id uuid [not null]
+  slot tstzrange [not null, note: 'Occupied interval [start, end); length = service duration (I4)']
+  starts_at timestamptz [note: 'Generated: lower(slot)']
+  ends_at timestamptz [note: 'Generated: upper(slot)']
+  status text [not null, note: 'held > booked | released; booked > attended | no_show | cancelled | rescheduled']
+  hold_expires_at timestamptz
+  release_reason_code text
+  saga_id uuid [note: 'medicitas_appointment_orchestrator.saga_instances.id (logical reference)']
+  rescheduled_from_id uuid [note: 'Previous appointment when this row comes from a reschedule (RF10)']
+  booked_by_subject uuid [not null]
+  cancel_reason text
+  cancelled_by_subject uuid
+  cancelled_at timestamptz
+  outcome_recorded_by_subject uuid
+  outcome_recorded_at timestamptz
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, rescheduled_from_id) [unique, name: 'appointments_rescheduled_from_unique', note: 'Partial: at most one successor']
+    (tenant_id, professional_id, starts_at) [name: 'appointments_active_professional_start_idx', note: 'Partial: held and booked']
+    (tenant_id, patient_id, starts_at) [name: 'appointments_patient_history_idx']
+    (tenant_id, starts_at) [name: 'appointments_tenant_start_idx']
+  }
+
+  Note: '''
+  Appointment aggregate. Only held and booked rows occupy the agenda.
+  GiST exclusion constraints: no overlap per professional (I1) and per patient (I2).
+  '''
+}
+
+Table clinical_notes {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  appointment_id uuid [not null]
+  author_subject uuid [not null, note: 'Must be the appointment professional']
+  content text [not null, note: 'Never copied to events, logs or the audit log']
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Indexes {
+    (tenant_id, appointment_id) [unique]
+  }
+
+  Note: 'Clinical note of an attended appointment (RF15); immutable, every access is audited.'
+}
+
+Table audit_log {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [not null]
+  occurred_at timestamptz [not null]
+  recorded_at timestamptz [not null, default: `clock_timestamp()`]
+  actor_subject uuid [not null]
+  actor_role text [not null, note: 'clinic_admin | receptionist | health_professional']
+  patient_id uuid [not null, note: 'medicitas_user.patients.id (logical reference)']
+  resource_type text [not null, note: 'clinical_note | patient_contact']
+  resource_id uuid [not null, note: 'Note id or patient id']
+  action text [not null, note: 'read | create | update']
+  outcome text [not null, note: 'success | denied']
+  correlation_id uuid [not null]
+  source_service text [not null, note: 'scheduler-management | user-management']
+  source_message_id uuid [unique, note: 'Event messageId for de-duplication; NULL for local note accesses']
+
+  Indexes {
+    (tenant_id, occurred_at, id) [name: 'audit_log_tenant_time_idx']
+    (tenant_id, actor_subject, occurred_at) [name: 'audit_log_tenant_actor_idx']
+    (tenant_id, patient_id, occurred_at) [name: 'audit_log_tenant_patient_idx']
+  }
+
+  Note: 'Append-only audit (RF18, I6): no UPDATE, DELETE or TRUNCATE grants, plus a trigger that rejects them.'
+}
+
+// ---------------------------------------------------------------- relationships
+
+Ref: catalog_services.tenant_id > tenants.id
+Ref: catalog_professionals.tenant_id > tenants.id
+Ref: catalog_professional_services.(tenant_id, professional_id) > catalog_professionals.(tenant_id, id)
+Ref: catalog_professional_services.(tenant_id, service_id) > catalog_services.(tenant_id, id)
+
+Ref: professional_agendas.(tenant_id, professional_id) - catalog_professionals.(tenant_id, id)
+Ref: weekly_schedule_blocks.(tenant_id, professional_id) > professional_agendas.(tenant_id, professional_id)
+Ref: calendar_blocks.(tenant_id, professional_id) > professional_agendas.(tenant_id, professional_id)
+Ref: availability_versions.(tenant_id, professional_id) > professional_agendas.(tenant_id, professional_id)
+
+Ref: appointments.tenant_id > tenants.id
+Ref: appointments.(tenant_id, professional_id) > catalog_professionals.(tenant_id, id)
+Ref: appointments.(tenant_id, service_id) > catalog_services.(tenant_id, id)
+Ref: appointments.(tenant_id, rescheduled_from_id) - appointments.(tenant_id, id)
+Ref: clinical_notes.(tenant_id, appointment_id) - appointments.(tenant_id, id)
+Ref: audit_log.tenant_id > tenants.id

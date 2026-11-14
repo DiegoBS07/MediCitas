@@ -1,0 +1,116 @@
+// user-management: database medicitas_user, schema identity (application plane).
+// Reliability tables (outbox_messages, inbox_messages, idempotency_records) are drawn in 00-reliability-tables.dbml.
+
+Project medicitas_user {
+  database_type: 'PostgreSQL'
+  Note: 'Clinic users (RF2), roles and permissions (RF17) and patients (RF14). Tenant tables carry tenant_id and forced Row-Level Security.'
+}
+
+TableGroup reference_data {
+  roles
+  permissions
+  role_permissions
+}
+
+TableGroup tenant_data {
+  tenants
+  users
+  patients
+}
+
+Table roles {
+  code text [pk, note: 'platform_admin | clinic_admin | receptionist | health_professional']
+  scope text [not null, note: 'platform | tenant']
+  description text [not null]
+
+  Note: 'MediCitas roles (Keycloak realm roles). Reference table, no RLS.'
+}
+
+Table permissions {
+  code text [pk, note: 'Format resource:action']
+  description text [not null]
+  requirements text [not null, note: 'Functional requirements covered by the permission']
+
+  Note: 'Domain permissions that roles are translated into (RF17). Reference table, no RLS.'
+}
+
+Table role_permissions {
+  role_code text [not null]
+  permission_code text [not null]
+
+  Indexes {
+    (role_code, permission_code) [pk]
+  }
+
+  Note: 'Permission matrix: which role grants which permission.'
+}
+
+Table tenants {
+  id uuid [pk]
+  slug text [not null]
+  name text [not null]
+  timezone text [not null]
+  status text [not null, note: 'Always active (only active tenants are replicated)']
+  version integer [not null, note: 'aggregateVersion of the last applied event']
+  replicated_at timestamptz [not null, default: `clock_timestamp()`]
+
+  Note: 'Read replica of control-plane tenants. Foreign key target for tenant_id.'
+}
+
+Table users {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  keycloak_subject uuid [unique, note: 'Keycloak user id (token sub); NULL while provisioning']
+  email text [not null, note: 'Login e-mail; unique realm-wide, case-insensitive']
+  first_name text [not null]
+  last_name text [not null]
+  role text [not null, note: 'Single tenant role (never platform_admin)']
+  status text [not null, default: 'provisioning', note: 'provisioning > active > inactive | provisioning_failed']
+  provisioning_saga_id uuid [note: 'medicitas_user_orchestrator.saga_instances.id (logical reference)']
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  deactivated_at timestamptz [note: 'Logical deletion timestamp']
+
+  Indexes {
+    (tenant_id, id) [unique]
+    `lower(email)` [unique, name: 'users_email_unique', note: 'Partial: excludes provisioning_failed']
+    (tenant_id, last_name, first_name, id) [name: 'users_tenant_listing_idx']
+  }
+
+  Note: 'Clinic users (RF2). Credentials live in Keycloak, never here.'
+}
+
+Table patients {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  identification_type text [not null, note: 'national_id | passport | residence_card | other']
+  identification_number text [not null]
+  first_name text [not null]
+  last_name text [not null]
+  birth_date date [not null]
+  email text [note: 'Contact data (audited)']
+  phone text [note: 'Contact data (audited)']
+  address text [note: 'Contact data (audited)']
+  status text [not null, default: 'active', note: 'active | inactive']
+  created_by_subject uuid [not null]
+  version integer [not null, default: 1]
+  created_at timestamptz [not null, default: `clock_timestamp()`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  search_last_name text [note: 'Generated: lower(last_name)']
+  search_first_name text [note: 'Generated: lower(first_name)']
+
+  Indexes {
+    (tenant_id, id) [unique]
+    (tenant_id, identification_type, identification_number) [unique, name: 'patients_identification_unique']
+    (tenant_id, search_last_name, id) [name: 'patients_listing_idx']
+  }
+
+  Note: 'Patients of a clinic (RF14); they are not system users.'
+}
+
+Ref: role_permissions.role_code > roles.code
+Ref: role_permissions.permission_code > permissions.code
+Ref: users.role > roles.code
+Ref: users.tenant_id > tenants.id
+Ref: patients.tenant_id > tenants.id
