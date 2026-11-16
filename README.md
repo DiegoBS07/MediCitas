@@ -24,6 +24,7 @@ On Windows PowerShell, if `npm` reports that running scripts is disabled, call `
 ### Start the system (one command)
 
 ```bash
+npm ci  #Its not needed to run the system, only to run tests and metrics evaluations.
 cp .env.example .env    #Configure the passwords and ports if needed
 docker compose up --build          # or: docker compose up -d --build --wait  (returns when everything is healthy)
 ```
