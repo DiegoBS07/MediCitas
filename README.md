@@ -39,8 +39,8 @@ docker compose up --build          # or: docker compose up -d --build --wait  (r
 
 Migrations, seeds, the broker topology and the Keycloak realm are applied automatically by one-shot containers, nothing is configured by hand.
 
+Automated demostrations of the whole appointment cycle (RF7–RF13) and of the read-only route contract. They can be run with:
 ```bash
-npm ci                 # exact dependency versions from package-lock.json
 npm run smoke          # 10 read-only checks through the gateway
 npm run demo -- --pause   # step-by-step walkthrough of the whole appointment cycle
 ```
@@ -158,7 +158,6 @@ All paths are under `/api/v1`. `Appointment` = `{ appointmentId, patientId, prof
 | Slot already taken | `409` | `SLOT_TAKEN` (or `PATIENT_OVERLAP` when the patient is busy) |
 | Invalid request | `400` / `422` / `404` | `VALIDATION_FAILED`, `IDEMPOTENCY_KEY_REQUIRED` / `OUTSIDE_WORKING_HOURS`, `SLOT_BLOCKED`, `SLOT_MISALIGNED`, `SLOT_IN_PAST`, `PROFESSIONAL_NOT_QUALIFIED`, `SERVICE_INACTIVE`, `PROFESSIONAL_INACTIVE`, `PATIENT_INACTIVE` / `RESOURCE_NOT_FOUND` |
 
-Ready-to-run requests for every route: [`demo/medicitas.http`](demo/medicitas.http). The messages exchanged between services are shown in §3, "Microservices and their communications".
 
 ---
 
@@ -252,7 +251,7 @@ Every service-to-service message goes through RabbitMQ (transactional outbox and
 
 ### Design decisions
 
-Each decision states what was chosen, why, which alternatives were rejected and what it costs. Multi-tenancy and identity are in §4, the isolation level in §5.
+Each decision states what was chosen, why, which alternatives were rejected and what it costs.
 
 #### Service boundaries and data ownership
 
@@ -526,7 +525,7 @@ RLS costs ≈ 0.5 ms of planning on the most complex query and less than 0.1 ms 
 | I7 Slot freed immediately | `availability-cache`; `appointment-lifecycle`; `resilience` (even with the broker down) |
 | I8 Cache never contradicts the database | `availability-cache` (query → book → query; duplicated and out-of-order events; Redis down); `last-slot-race` |
 
-Acceptance criteria of the statement: 1 → `docker compose up` (§1); 2 → `appointment-lifecycle`; 3 → `authorization`; 4 → `tenant-isolation`; 5 → `availability-cache`; 6 → `last-slot-race`; 7 → `npm test`.
+Acceptance criteria of the statement: 1 → `docker compose up`; 2 → `appointment-lifecycle`; 3 → `authorization`; 4 → `tenant-isolation`; 5 → `availability-cache`; 6 → `last-slot-race`; 7 → `npm test`.
 
 Measurements: indexes justified with execution plans ([`docs/data/index-justification.md`](docs/data/index-justification.md), `npm run evidence:explain`) and the availability cache before/after ([`docs/data/cache-report.md`](docs/data/cache-report.md), `npm run bench:cache`).
 
